@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import 'view_schedules.dart';
 import 'input_grade.dart';
 import 'login_screen.dart';
 
@@ -47,6 +48,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
       'subtitle': 'Lihat jadwal kelas Anda',
       'icon': Icons.calendar_month_outlined,
       'color': Colors.purple,
+      'page': ViewSchedulePage(), 
       'page': Scaffold(
         appBar: AppBar(title: const Text('Jadwal Mengajar')),
         body: const Center(child: Text('Halaman Jadwal Mengajar')),
