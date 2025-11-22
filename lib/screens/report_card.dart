@@ -20,7 +20,7 @@ class _ReportCardState extends State<ReportCard> {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       // Asumsi: currentUser tidak akan null di halaman ini
       Provider.of<GradeProvider>(context, listen: false)
-          .fetchGrades(auth.currentUser!.linkedId!);
+          .fetchGrades(auth.currentUser!.id);
     });
   }
 
