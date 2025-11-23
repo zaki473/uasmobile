@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import 'manage_schedule.dart';
 import 'manage_students.dart';
+import 'manage_teachers.dart'; // <-- langsung ManageTeachers
+import 'manage_schedule.dart';
 import 'login_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
@@ -18,7 +19,6 @@ class _AdminDashboardState extends State<AdminDashboard>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  // ... (kode initState dan dispose tetap sama) ...
   @override
   void initState() {
     super.initState();
@@ -33,8 +33,8 @@ class _AdminDashboardState extends State<AdminDashboard>
 
     _slideAnimation =
         Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
-          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-        );
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
 
     _animationController.forward();
   }
@@ -54,6 +54,13 @@ class _AdminDashboardState extends State<AdminDashboard>
       'page': const ManageStudents(),
     },
     {
+      'title': 'Kelola Guru',
+      'subtitle': 'Data guru & mata pelajaran',
+      'icon': Icons.person_outline,
+      'color': Colors.green,
+      'page': const ManageTeachers(), // <-- langsung ManageTeachers
+    },
+    {
       'title': 'Pengumuman',
       'subtitle': 'Info & berita',
       'icon': Icons.campaign_outlined,
@@ -68,7 +75,7 @@ class _AdminDashboardState extends State<AdminDashboard>
       'subtitle': 'Jadwal pelajaran',
       'icon': Icons.calendar_today_outlined,
       'color': Colors.blue,
-      'page': ManageSchedulePage(), 
+      'page': ManageSchedulePage(),
     },
     {
       'title': 'Laporan',
@@ -100,7 +107,6 @@ class _AdminDashboardState extends State<AdminDashboard>
                     crossAxisCount: 2,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
-                    // PERUBAHAN: Membuat kartu lebih persegi
                     childAspectRatio: 1.0,
                   ),
                   itemCount: _menuItems.length,
@@ -124,7 +130,6 @@ class _AdminDashboardState extends State<AdminDashboard>
     );
   }
 
-  // Widget _buildHeader tetap sama
   Widget _buildHeader(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context, listen: false);
 
@@ -158,9 +163,9 @@ class _AdminDashboardState extends State<AdminDashboard>
                 Text(
                   'Dashboard Admin',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -219,10 +224,8 @@ class _AdminDashboardState extends State<AdminDashboard>
           child: Padding(
             padding: const EdgeInsets.all(12.0),
             child: Column(
-              // PERUBAHAN: Tata letak lebih padat
-              mainAxisAlignment: MainAxisAlignment.center, // Pusatkan konten
-              crossAxisAlignment:
-                  CrossAxisAlignment.center, // Pusatkan secara horizontal
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
@@ -232,18 +235,18 @@ class _AdminDashboardState extends State<AdminDashboard>
                   ),
                   child: Icon(icon, size: 32, color: color),
                 ),
-                const SizedBox(height: 12), // Jarak tetap
+                const SizedBox(height: 12),
                 Text(
                   title,
-                  textAlign: TextAlign.center, // Teks di tengah
+                  textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  textAlign: TextAlign.center, // Teks di tengah
+                  textAlign: TextAlign.center,
                   style: Theme.of(
                     context,
                   ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
