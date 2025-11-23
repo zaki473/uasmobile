@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+// Import Provider & Model Anda
 import '../providers/auth_provider.dart';
 import '../providers/grade_provider.dart';
-import '../models/grade.dart'; // Pastikan Anda mengimpor model Grade
+import '../models/grade.dart';
+
+// Import Package PDF & Printing
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 class ReportCard extends StatefulWidget {
   const ReportCard({super.key});
@@ -15,29 +21,98 @@ class _ReportCardState extends State<ReportCard> {
   @override
   void initState() {
     super.initState();
-    // Menggunakan addPostFrameCallback untuk memastikan context sudah siap
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      // Asumsi: currentUser tidak akan null di halaman ini
-      Provider.of<GradeProvider>(context, listen: false)
-          .fetchGrades(auth.currentUser!.id);
+      // Pastikan user ada sebelum fetch
+      if (auth.currentUser != null) {
+        Provider.of<GradeProvider>(context, listen: false)
+            .fetchGrades(auth.currentUser!.id);
+      }
     });
   }
 
-  // Fungsi untuk menentukan warna berdasarkan nilai
   Color _getGradeColor(double score) {
     if (score >= 85) return Colors.green.shade600;
     if (score >= 70) return Colors.orange.shade600;
     return Colors.red.shade600;
   }
 
+  // ----------------------------------------------------------
+  // FUNGSI GENERATE PDF
+  // ----------------------------------------------------------
+  Future<void> _generatePdf(List<Grade> grades, double average, String studentName) async {
+    final doc = pw.Document();
+
+    doc.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Header(
+                level: 0,
+                child: pw.Text('Laporan Hasil Belajar', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+              ),
+              pw.SizedBox(height: 20),
+              pw.Text('Nama Siswa: $studentName'),
+              pw.Text('Tanggal Cetak: ${DateTime.now().toString().split(' ')[0]}'),
+              pw.SizedBox(height: 20),
+              
+              // Tabel Nilai
+              pw.Table.fromTextArray(
+                context: context,
+                headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
+                headerHeight: 25,
+                cellAlignments: {
+                  0: pw.Alignment.centerLeft,
+                  1: pw.Alignment.center,
+                  2: pw.Alignment.center,
+                  3: pw.Alignment.center,
+                  4: pw.Alignment.center,
+                  5: pw.Alignment.center,
+                },
+                headers: ['Mata Pelajaran', 'Tugas', 'UTS', 'UAS', 'Akhir', 'Predikat'],
+                data: grades.map((g) => [
+                  g.subject,
+                  g.tugas.toString(),
+                  g.uts.toString(),
+                  g.uas.toString(),
+                  g.finalScore.toStringAsFixed(1),
+                  g.predicate
+                ]).toList(),
+              ),
+              pw.SizedBox(height: 20),
+              
+              // Total Rata-rata
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.end,
+                children: [
+                  pw.Text('Rata-rata Nilai: ', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+                  pw.Text(average.toStringAsFixed(2), style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.blue)),
+                ]
+              )
+            ],
+          );
+        },
+      ),
+    );
+
+    // Membuka dialog print/share
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => doc.save(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context, listen: false);
+    
+    // Ambil nama user untuk ditampilkan di PDF (Default "Siswa" jika null)
+    final studentName = auth.currentUser?.name ?? "Siswa";
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      // AppBar yang lebih modern dengan gradien
       appBar: AppBar(
         title: const Text('Rapor Belajar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
@@ -80,7 +155,6 @@ class _ReportCardState extends State<ReportCard> {
                   itemCount: gradeProv.grades.length,
                   itemBuilder: (context, index) {
                     final grade = gradeProv.grades[index];
-                    // Terapkan animasi pada setiap kartu
                     return _AnimatedListItem(
                       index: index,
                       child: _buildGradeCard(grade),
@@ -88,7 +162,8 @@ class _ReportCardState extends State<ReportCard> {
                   },
                 ),
               ),
-              _buildSummaryCard(gradeProv, auth.currentUser!.linkedId!),
+              // Panggil widget summary card di sini
+              _buildSummaryCard(gradeProv, studentName),
             ],
           );
         },
@@ -96,7 +171,6 @@ class _ReportCardState extends State<ReportCard> {
     );
   }
 
-  // Widget untuk kartu setiap mata pelajaran
   Widget _buildGradeCard(Grade grade) {
     final gradeColor = _getGradeColor(grade.finalScore);
     return Card(
@@ -129,7 +203,6 @@ class _ReportCardState extends State<ReportCard> {
               ),
             ),
             const SizedBox(width: 16),
-            // Lingkaran untuk nilai akhir
             Column(
               children: [
                 Container(
@@ -163,27 +236,66 @@ class _ReportCardState extends State<ReportCard> {
     );
   }
   
-  // Widget untuk kartu ringkasan di bagian bawah
-  Widget _buildSummaryCard(GradeProvider gradeProv, String studentId) {
-    return Card(
+  // ----------------------------------------------------------
+  // WIDGET SUMMARY & TOMBOL EXPORT
+  // ----------------------------------------------------------
+  Widget _buildSummaryCard(GradeProvider gradeProv, String studentName) {
+    // FIX: Panggil getAverage() TANPA parameter studentId
+    // Ini memastikan rata-rata dihitung dari data yang TAMPIL di layar
+    final average = gradeProv.getAverage();
+    
+    return Container(
       margin: const EdgeInsets.all(16),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Rata-rata Nilai',
-              style: Theme.of(context).textTheme.titleMedium,
+            // Bagian Kiri: Nilai Rata-rata
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Rata-rata Nilai',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  average.toStringAsFixed(2),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue.shade700,
+                      ),
+                ),
+              ],
             ),
-            Text(
-              gradeProv.getAverage(studentId).toStringAsFixed(2),
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
-                  ),
+            
+            // Bagian Kanan: Tombol Export PDF
+            ElevatedButton.icon(
+              onPressed: () => _generatePdf(gradeProv.grades, average, studentName),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade500,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 3,
+              ),
+              icon: const Icon(Icons.picture_as_pdf_rounded),
+              label: const Text("Export PDF"),
             ),
           ],
         ),
@@ -192,7 +304,7 @@ class _ReportCardState extends State<ReportCard> {
   }
 }
 
-// Widget animasi yang bisa digunakan kembali
+// Widget Animasi List
 class _AnimatedListItem extends StatefulWidget {
   final int index;
   final Widget child;

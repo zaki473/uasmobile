@@ -52,6 +52,7 @@ class GradeProvider extends ChangeNotifier {
       );
 
       await _db.collection('grades').add(grade.toMap());
+      // Refresh data setelah menambah
       await fetchGrades(studentId);
       _isLoading = false;
       notifyListeners();
@@ -62,10 +63,14 @@ class GradeProvider extends ChangeNotifier {
     }
   }
 
-  double getAverage(String studentId) {
-    final list = _grades.where((g) => g.studentId == studentId).toList();
-    if (list.isEmpty) return 0;
-    final total = list.fold(0.0, (sum, g) => sum + g.finalScore);
-    return total / list.length;
+  // --- BAGIAN YANG DIPERBAIKI ---
+  // Hapus parameter studentId, hitung langsung dari _grades
+  double getAverage() {
+    if (_grades.isEmpty) return 0;
+    
+    // Menjumlahkan finalScore dari semua data yang ada di list
+    final total = _grades.fold(0.0, (sum, g) => sum + g.finalScore);
+    
+    return total / _grades.length;
   }
 }
