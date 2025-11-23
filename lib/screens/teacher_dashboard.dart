@@ -48,11 +48,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
       'subtitle': 'Lihat jadwal kelas Anda',
       'icon': Icons.calendar_month_outlined,
       'color': Colors.purple,
-      'page': ViewSchedulePage(), 
-      'page': Scaffold(
-        appBar: AppBar(title: const Text('Jadwal Mengajar')),
-        body: const Center(child: Text('Halaman Jadwal Mengajar')),
-      ),
+      'page': ViewSchedulePage(),
     },
   ];
 

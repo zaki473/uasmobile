@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
-class ViewSchedulePage extends StatelessWidget {
-  final String uidGuru = FirebaseAuth.instance.currentUser!.uid;
+class StudentViewSchedulePage extends StatefulWidget {
+  @override
+  State<StudentViewSchedulePage> createState() =>
+      _StudentViewSchedulePageState();
+}
 
-  // --- 1. DEFINE WARNA & STYLE (Sama persis dengan Page Siswa) ---
+class _StudentViewSchedulePageState extends State<StudentViewSchedulePage> {
+  // Warna khas Ruangguru (Cyan/Light Blue palette)
   final Color rgPrimary = const Color(0xFF3ecfde);
   final Color rgAccent = const Color(0xFF28b5c5);
   final Color bgGrey = const Color(0xFFF4F7F9);
   final Color textDark = const Color(0xFF4A4A4A);
   final Color textGrey = const Color(0xFF9B9B9B);
 
-  // --- 2. HELPER SORTING HARI ---
+  // Helper untuk menentukan urutan hari
   int getDayOrder(String? hari) {
     switch (hari?.toLowerCase()) {
       case 'senin': return 1;
@@ -22,21 +25,21 @@ class ViewSchedulePage extends StatelessWidget {
       case 'jumat': return 5;
       case 'sabtu': return 6;
       case 'minggu': return 7;
-      default: return 8;
+      default: return 8; // Untuk data yg harinya typo atau kosong ditaruh paling bawah
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: bgGrey, // Background abu-abu muda
+      backgroundColor: bgGrey,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
         centerTitle: true,
         iconTheme: IconThemeData(color: textDark),
         title: Text(
-          "Jadwal Mengajar",
+          "Jadwal Pelajaran",
           style: TextStyle(
             color: textDark,
             fontWeight: FontWeight.bold,
@@ -46,7 +49,7 @@ class ViewSchedulePage extends StatelessWidget {
       ),
       body: Column(
         children: [
-          // Header Banner Kecil
+          // Header Banner
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -56,10 +59,10 @@ class ViewSchedulePage extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(Icons.school_rounded, color: rgPrimary, size: 20),
+                Icon(Icons.sort_rounded, color: rgPrimary, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  "Daftar Kelas Mengajar Anda",
+                  "Jadwal Pelajaran Hari Ini",
                   style: TextStyle(
                     color: textDark,
                     fontWeight: FontWeight.w600,
@@ -71,10 +74,8 @@ class ViewSchedulePage extends StatelessWidget {
 
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              // --- STREAM ASLI (TIDAK DIUBAH) ---
               stream: FirebaseFirestore.instance
                   .collection('jadwal_pelajaran')
-                  .where('guruId', isEqualTo: uidGuru)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -88,10 +89,10 @@ class ViewSchedulePage extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.free_breakfast_outlined, size: 60, color: Colors.grey[300]),
+                        Icon(Icons.event_busy, size: 60, color: Colors.grey[300]),
                         const SizedBox(height: 10),
                         Text(
-                          "Anda belum memiliki jadwal mengajar",
+                          "Belum ada jadwal pelajaran",
                           style: TextStyle(color: textGrey),
                         ),
                       ],
@@ -99,27 +100,29 @@ class ViewSchedulePage extends StatelessWidget {
                   );
                 }
 
-                // --- LOGIKA SORTING (Sama seperti Page Siswa) ---
+                // --- LOGIKA SORTING (PENGURUTAN) ---
+                // 1. Ambil semua docs
                 List<QueryDocumentSnapshot> docs = snapshot.data!.docs.toList();
 
+                // 2. Lakukan sorting manual
                 docs.sort((a, b) {
                   final dataA = a.data() as Map<String, dynamic>;
                   final dataB = b.data() as Map<String, dynamic>;
 
-                  // 1. Sort by HARI
+                  // Sort level 1: Berdasarkan HARI
                   int orderA = getDayOrder(dataA['hari']);
                   int orderB = getDayOrder(dataB['hari']);
                   
                   if (orderA != orderB) {
                     return orderA.compareTo(orderB);
                   } else {
-                    // 2. Sort by JAM
+                    // Sort level 2: Jika harinya sama, urutkan berdasarkan JAM MULAI
                     String jamA = dataA['jam_mulai'] ?? "";
                     String jamB = dataB['jam_mulai'] ?? "";
                     return jamA.compareTo(jamB);
                   }
                 });
-                // -----------------------------------------------
+                // --- END LOGIKA SORTING ---
 
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
@@ -127,12 +130,11 @@ class ViewSchedulePage extends StatelessWidget {
                   itemBuilder: (context, i) {
                     final data = docs[i].data() as Map<String, dynamic>;
 
-                    // Ambil data (Safe Handling)
                     String mapel = data['mapel'] ?? "Tanpa Mapel";
+                    String guru = data['guru'] ?? "-";
                     String hari = data['hari'] ?? "-";
                     String jamMulai = data['jam_mulai'] ?? "--:--";
                     String jamSelesai = data['jam_selesai'] ?? "--:--";
-                    // Note: Jika ada field 'kelas' di database, bisa ditampilkan juga disini.
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 16),
@@ -150,7 +152,7 @@ class ViewSchedulePage extends StatelessWidget {
                       child: IntrinsicHeight(
                         child: Row(
                           children: [
-                            // Bagian Kiri: Jam (Warna Biru)
+                            // Kolom Kiri: Jam
                             Container(
                               width: 80,
                               decoration: BoxDecoration(
@@ -189,8 +191,8 @@ class ViewSchedulePage extends StatelessWidget {
                                 ],
                               ),
                             ),
-
-                            // Bagian Kanan: Detail
+                            
+                            // Kolom Kanan: Detail
                             Expanded(
                               child: Padding(
                                 padding: const EdgeInsets.all(16),
@@ -206,7 +208,7 @@ class ViewSchedulePage extends StatelessWidget {
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
-                                        hari,
+                                        hari, // Pastikan data di DB tulisannya misal "Senin"
                                         style: const TextStyle(
                                           color: Colors.orange,
                                           fontSize: 10,
@@ -215,7 +217,7 @@ class ViewSchedulePage extends StatelessWidget {
                                       ),
                                     ),
                                     const SizedBox(height: 8),
-
+                                    
                                     // Nama Mapel
                                     Text(
                                       mapel,
@@ -228,20 +230,22 @@ class ViewSchedulePage extends StatelessWidget {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     const SizedBox(height: 6),
-
-                                    // Info tambahan (Misal: Mengajar)
+                                    
+                                    // Nama Guru
                                     Row(
                                       children: [
-                                        Icon(Icons.class_outlined, // Ganti icon person jadi class
+                                        Icon(Icons.person_outline,
                                             size: 16, color: textGrey),
                                         const SizedBox(width: 4),
                                         Expanded(
                                           child: Text(
-                                            "Pengajar: Anda", // Karena ini view Guru
+                                            guru,
                                             style: TextStyle(
                                               fontSize: 14,
                                               color: textGrey,
                                             ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
                                       ],

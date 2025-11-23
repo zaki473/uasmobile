@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import 'student_view_schedule.dart';
 import 'report_card.dart';
 import 'login_screen.dart';
 
-// Ubah menjadi StatefulWidget untuk mengelola animasi
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
 
@@ -13,193 +13,305 @@ class StudentDashboard extends StatefulWidget {
 }
 
 class _StudentDashboardState extends State<StudentDashboard> {
-  // Daftar menu untuk kemudahan pengelolaan
+  // Palette Warna Ruangguru Style
+  final Color rgPrimary = const Color(0xFF3ecfde);
+  final Color rgDark = const Color(0xFF00A8E8);
+  final Color bgColor = const Color(0xFFFAFAFA);
+  final Color textDark = const Color(0xFF2D3E50);
+
   final List<Map<String, dynamic>> _menuItems = [
     {
+      'title': 'Jadwal Pelajaran',
+      'subtitle': 'Cek kelas hari ini',
+      'icon': Icons.calendar_month_rounded,
+      'color': Color(0xFF4FC3F7),
+      'page': StudentViewSchedulePage(),
+    },
+    {
       'title': 'Lihat Rapor',
-      'subtitle': 'Periksa nilai dan absensi',
-      'icon': Icons.assessment_outlined,
-      'color': Colors.blue,
+      'subtitle': 'Nilai & Absensi',
+      'icon': Icons.pie_chart_rounded,
+      'color': Color(0xFFFFA726),
       'page': const ReportCard(),
     },
     {
-      'title': 'Jadwal Pelajaran',
-      'subtitle': 'Lihat jadwal kelas harian',
-      'icon': Icons.calendar_today_outlined,
-      'color': Colors.teal,
-      'page': Scaffold(
-        appBar: AppBar(title: const Text('Jadwal Pelajaran')),
-        body: const Center(child: Text('Halaman Jadwal Pelajaran')),
-      ),
-    },
-    {
       'title': 'Materi Belajar',
-      'subtitle': 'Unduh materi dari guru',
-      'icon': Icons.book_outlined,
-      'color': Colors.orange,
+      'subtitle': 'Bahan ajar guru',
+      'icon': Icons.menu_book_rounded,
+      'color': Color(0xFF66BB6A),
       'page': Scaffold(
         appBar: AppBar(title: const Text('Materi Belajar')),
         body: const Center(child: Text('Halaman Materi Belajar')),
       ),
     },
+    {
+      'title': 'Tugas Rumah',
+      'subtitle': 'Deadlinemu',
+      'icon': Icons.assignment_rounded,
+      'color': Color(0xFFAB47BC),
+      'page': Scaffold(
+          appBar: AppBar(title: Text("Tugas")), 
+          body: Center(child: Text("Fitur Segera Hadir"))),
+    },
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      body: Column(
-        children: [
-          _buildHeader(context),
-          Expanded(
-            // Menggunakan ListView.builder untuk daftar menu
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: _menuItems.length,
-              itemBuilder: (context, index) {
-                final item = _menuItems[index];
-                // Terapkan animasi pada setiap item
-                return _AnimatedListItem(
-                  index: index,
-                  child: _menuCard(
-                    context: context,
-                    title: item['title'],
-                    subtitle: item['subtitle'],
-                    icon: item['icon'],
-                    color: item['color'],
-                    page: item['page'],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    // Asumsi: currentUser memiliki properti 'name'. Ganti jika perlu.
     final userName = auth.currentUser?.name ?? 'Siswa';
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 25),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.teal.shade400, Colors.blue.shade600],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(35),
-          bottomRight: Radius.circular(35),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          )
-        ],
-      ),
-      child: SafeArea(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Scaffold(
+      backgroundColor: bgColor,
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Selamat Datang,',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white70,
-                      ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  userName,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-              ],
+            // HEADER
+            _buildFancyHeader(context, userName, auth),
+
+            const SizedBox(height: 20),
+
+            // INFO BANNER
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _buildInfoBanner(),
             ),
-            IconButton(
-              onPressed: () {
-                auth.logout();
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
-              },
-              icon: const Icon(Icons.logout, color: Colors.white, size: 28),
+
+            const SizedBox(height: 25),
+
+            // TITLE
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                "Menu Utama",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: textDark,
+                ),
+              ),
             ),
+
+            const SizedBox(height: 12),
+
+            // GRID MENU (COMPACT VERSION)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _menuItems.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2, 
+                  crossAxisSpacing: 12, // Jarak antar kartu horizontal
+                  mainAxisSpacing: 12,  // Jarak antar kartu vertikal
+                  childAspectRatio: 1.6, // <--- KUNCI: Angka lebih besar = Kartu lebih pendek (Ceper)
+                ),
+                itemBuilder: (context, index) {
+                  final item = _menuItems[index];
+                  return _AnimatedListItem(
+                    index: index,
+                    child: _buildCompactGridCard(context, item),
+                  );
+                },
+              ),
+            ),
+            
+            const SizedBox(height: 30),
           ],
         ),
       ),
     );
   }
 
-  Widget _menuCard({
-    required BuildContext context,
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required Widget page,
-  }) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      elevation: 2,
-      shadowColor: Colors.black26,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => page));
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            children: [
-              // Ikon dengan latar belakang
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, size: 28, color: color),
+  // --- WIDGET HEADER ---
+  Widget _buildFancyHeader(BuildContext context, String name, AuthProvider auth) {
+    return Stack(
+      children: [
+        Container(
+          height: 200, // Sedikit dikurangi tingginya biar proporsional
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [rgPrimary, rgDark],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(35),
+              bottomRight: Radius.circular(35),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: rgPrimary.withOpacity(0.3),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
               ),
-              const SizedBox(width: 16),
-              // Judul dan Subjudul
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            ],
+          ),
+        ),
+        
+        // Dekorasi background
+        Positioned(
+          top: -30, right: -30,
+          child: CircleAvatar(radius: 80, backgroundColor: Colors.white.withOpacity(0.1)),
+        ),
+        
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                    Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                      child: CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Colors.grey[200],
+                        child: Icon(Icons.person, color: rgDark, size: 20),
+                      ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[600],
-                          ),
-                    ),
+                    IconButton(
+                      onPressed: () {
+                        auth.logout();
+                        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginScreen()), (route) => false);
+                      },
+                      icon: const Icon(Icons.logout_rounded, color: Colors.white),
+                    )
                   ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              // Ikon panah
-              Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 16),
-            ],
+                const SizedBox(height: 15),
+                Text("Halo, Semangat Pagi!", style: TextStyle(color: Colors.white70, fontSize: 14)),
+                const SizedBox(height: 2),
+                Text(
+                  name,
+                  style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // --- WIDGET BANNER ---
+  Widget _buildInfoBanner() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade100),
+        boxShadow: [
+          BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.blue.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.notifications_active_rounded, color: Colors.blue, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("Pengumuman", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                Text("Ujian Semester dimulai tgl 20.", style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+              ],
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  // --- NEW COMPACT CARD DESIGN ---
+  Widget _buildCompactGridCard(BuildContext context, Map<String, dynamic> item) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20), // Sudut tetap rounded
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03), // Shadow sangat halus
+            spreadRadius: 0,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => item['page'])),
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(12.0), // Padding lebih kecil (Compact)
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center, // Center vertikal
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon di Kiri Atas
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: (item['color'] as Color).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(item['icon'], color: item['color'], size: 22), // Icon size lebih kecil dikit
+                    ),
+                    // Dekorasi titik kecil di pojok kanan (opsional aesthetic)
+                    Container(
+                      width: 6, height: 6,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        shape: BoxShape.circle,
+                      ),
+                    )
+                  ],
+                ),
+                
+                const Spacer(), // Dorong teks ke bawah
+                
+                // Teks Judul
+                Text(
+                  item['title'],
+                  style: TextStyle(
+                    fontSize: 14, // Font size pas
+                    fontWeight: FontWeight.w700,
+                    color: textDark,
+                    height: 1.2,
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 4),
+                // Teks Subtitle
+                Text(
+                  item['subtitle'],
+                  style: TextStyle(
+                    fontSize: 10, // Subtitle kecil tapi terbaca
+                    color: Colors.grey[500],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -207,19 +319,16 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 }
 
-// Widget terpisah untuk menangani animasi setiap item list
+// --- ANIMASI (TETAP SAMA) ---
 class _AnimatedListItem extends StatefulWidget {
   final int index;
   final Widget child;
-
   const _AnimatedListItem({required this.index, required this.child});
-
   @override
   State<_AnimatedListItem> createState() => _AnimatedListItemState();
 }
 
-class _AnimatedListItemState extends State<_AnimatedListItem>
-    with SingleTickerProviderStateMixin {
+class _AnimatedListItemState extends State<_AnimatedListItem> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -227,44 +336,18 @@ class _AnimatedListItemState extends State<_AnimatedListItem>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-
-    // Animasi diberi sedikit delay berdasarkan posisinya di list
-    final delay = Duration(milliseconds: widget.index * 100);
-    Future.delayed(delay, () {
-      if (mounted) {
-        _controller.forward();
-      }
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    Future.delayed(Duration(milliseconds: widget.index * 100), () {
+      if (mounted) _controller.forward();
     });
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
-    );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.5),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
   }
-
+  
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
+  void dispose() { _controller.dispose(); super.dispose(); }
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: widget.child,
-      ),
-    );
+    return FadeTransition(opacity: _fadeAnimation, child: SlideTransition(position: _slideAnimation, child: widget.child));
   }
 }
