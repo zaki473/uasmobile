@@ -46,25 +46,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
       'color': Colors.blue,
       'page': const StudentAnnouncement(),
     },
-    {
-      'title': 'Materi Belajar',
-      'subtitle': 'Bahan ajar guru',
-      'icon': Icons.menu_book_rounded,
-      'color': const Color(0xFF66BB6A),
-      'page': Scaffold(
-        appBar: AppBar(title: const Text('Materi Belajar')),
-        body: const Center(child: Text('Halaman Materi Belajar')),
-      ),
-    },
-    {
-      'title': 'Tugas Rumah',
-      'subtitle': 'Deadlinemu',
-      'icon': Icons.assignment_rounded,
-      'color': const Color(0xFFAB47BC),
-      'page': Scaffold(
-          appBar: AppBar(title: const Text("Tugas")), 
-          body: const Center(child: Text("Fitur Segera Hadir"))),
-    },
   ];
 
   @override
@@ -245,31 +226,17 @@ class _StudentDashboardState extends State<StudentDashboard> {
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.notifications_active_rounded, color: Colors.blue, size: 20),
-          ),
+          Icon(Icons.info_rounded, color: isDark ? Colors.blue[300] : Colors.blue, size: 28),
           const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Pengumuman", 
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: textColor)
-                ),
-                Text(
-                  "Ujian Semester dimulai tgl 20.", 
-                  // Warna subtitle dinamis
-                  style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 11)
-                ),
-              ],
+            child: Text(
+              "Jangan lupa untuk selalu memeriksa pengumuman terbaru dari sekolah!",
+              style: TextStyle(
+                fontSize: 14,
+                color: textColor, // <-- Warna text dinamis
+              ),
             ),
-          )
+          ),
         ],
       ),
     );

@@ -32,30 +32,40 @@ class _InputGradeState extends State<InputGrade> {
   }
 
   // --- WIDGET STYLING ---
-  Widget _buildInputContainer({required Widget child}) {
+  Widget _buildInputContainer(BuildContext context, {required Widget child}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        // Warna background container (Putih di Light, Abu Gelap di Dark)
+        color: isDark ? Theme.of(context).cardColor : Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.08),
+            // Shadow lebih tipis di dark mode
+            color: isDark ? Colors.transparent : Colors.grey.withOpacity(0.08),
             spreadRadius: 2,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
+        // Border tipis untuk dark mode agar container terlihat jelas
+        border: isDark ? Border.all(color: Colors.white10) : null,
       ),
       child: child,
     );
   }
 
-  InputDecoration _inputDecoration(String label, IconData icon) {
+  InputDecoration _inputDecoration(BuildContext context, String label, IconData icon) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconColor = isDark ? Colors.indigoAccent : Colors.indigoAccent;
+    final labelColor = isDark ? Colors.white70 : Colors.grey[600];
+
     return InputDecoration(
       labelText: label,
-      labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
-      prefixIcon: Icon(icon, color: Colors.indigoAccent),
+      labelStyle: TextStyle(color: labelColor, fontSize: 14),
+      prefixIcon: Icon(icon, color: iconColor),
       border: InputBorder.none,
       contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
       enabledBorder: OutlineInputBorder(
@@ -69,11 +79,12 @@ class _InputGradeState extends State<InputGrade> {
     );
   }
 
-  // --- BUILDER: DROPDOWN SISWA (UPDATED) ---
-  Widget _buildStudentDropdown() {
+  // --- BUILDER: DROPDOWN SISWA ---
+  Widget _buildStudentDropdown(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+
     return StreamBuilder<QuerySnapshot>(
-      // 🔹 PERUBAHAN DISINI:
-      // Ambil dari 'users', Filter role == 'siswa', Urutkan nama
       stream: FirebaseFirestore.instance
           .collection('users')
           .where('role', isEqualTo: 'siswa') 
@@ -82,13 +93,14 @@ class _InputGradeState extends State<InputGrade> {
         // 1. Handle Loading
         if (!snapshot.hasData) {
           return _buildInputContainer(
+            context,
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Row(
                 children: [
                   const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
                   const SizedBox(width: 15),
-                  Text("Memuat data siswa...", style: TextStyle(color: Colors.grey[600])),
+                  Text("Memuat data siswa...", style: TextStyle(color: textColor)),
                 ],
               ),
             ),
@@ -97,11 +109,12 @@ class _InputGradeState extends State<InputGrade> {
 
         // 2. Handle Error / Kosong
         if (snapshot.hasError) {
-           return _buildInputContainer(child: ListTile(title: Text("Error: ${snapshot.error}")));
+           return _buildInputContainer(context, child: ListTile(title: Text("Error: ${snapshot.error}", style: TextStyle(color: textColor))));
         }
         
         if (snapshot.data!.docs.isEmpty) {
            return _buildInputContainer(
+             context,
              child: const ListTile(
                leading: Icon(Icons.warning_amber_rounded, color: Colors.orange),
                title: Text("Belum ada user 'siswa'"),
@@ -115,7 +128,7 @@ class _InputGradeState extends State<InputGrade> {
           Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
           
           String name = data['name'] ?? 'Tanpa Nama';
-          String uid = doc.id; // 🔹 PENTING: Pakai UID Dokumen agar nyambung ke Auth
+          String uid = doc.id; 
 
           studentItems.add(
             DropdownMenuItem(
@@ -123,6 +136,7 @@ class _InputGradeState extends State<InputGrade> {
               child: Text(
                 name, 
                 overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: textColor), // Warna teks item dropdown
               ),
             ),
           );
@@ -130,11 +144,13 @@ class _InputGradeState extends State<InputGrade> {
 
         // 4. Render Dropdown
         return _buildInputContainer(
+          context,
           child: DropdownButtonFormField<String>(
-            decoration: _inputDecoration("Pilih Siswa", Icons.person_search_outlined),
+            decoration: _inputDecoration(context, "Pilih Siswa", Icons.person_search_outlined),
             value: selectedStudentId,
             isExpanded: true,
-            hint: const Text("Klik untuk memilih siswa"),
+            dropdownColor: isDark ? Theme.of(context).cardColor : Colors.white, // <-- PENTING: Warna menu dropdown
+            hint: Text("Klik untuk memilih siswa", style: TextStyle(color: isDark ? Colors.white54 : Colors.grey)),
             icon: const Icon(Icons.arrow_drop_down_circle, color: Colors.indigo),
             items: studentItems,
             onChanged: (value) {
@@ -150,13 +166,16 @@ class _InputGradeState extends State<InputGrade> {
   }
 
   // --- BUILDER: TEXT FIELD BIASA ---
-  Widget _buildTextField({
+  Widget _buildTextField(BuildContext context, {
     required TextEditingController controller,
     required String label,
     required IconData icon,
     bool isNumber = false,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return _buildInputContainer(
+      context,
       child: TextFormField(
         controller: controller,
         keyboardType: isNumber ? TextInputType.number : TextInputType.text,
@@ -165,8 +184,9 @@ class _InputGradeState extends State<InputGrade> {
           if (isNumber && double.tryParse(value) == null) return 'Harus angka';
           return null;
         },
-        style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.black87),
-        decoration: _inputDecoration(label, icon),
+        // Warna teks input
+        style: TextStyle(fontWeight: FontWeight.w500, color: isDark ? Colors.white : Colors.black87),
+        decoration: _inputDecoration(context, label, icon),
       ),
     );
   }
@@ -175,14 +195,25 @@ class _InputGradeState extends State<InputGrade> {
   Widget build(BuildContext context) {
     final gradeProv = Provider.of<GradeProvider>(context, listen: false);
 
+    // 1. Deteksi Tema
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // 2. Tentukan Warna UI
+    final bgColor = isDark ? null : const Color(0xFFF5F7FA);
+    final titleColor = isDark ? Colors.white : Colors.black87;
+    final headingColor = isDark ? Colors.indigoAccent : Colors.indigo;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: bgColor,
       appBar: AppBar(
-        title: const Text('Input Nilai Siswa', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+        title: Text(
+          'Input Nilai Siswa', 
+          style: TextStyle(color: titleColor, fontWeight: FontWeight.bold)
+        ),
         backgroundColor: Colors.transparent,
         centerTitle: true,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        iconTheme: IconThemeData(color: titleColor),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
@@ -191,31 +222,37 @@ class _InputGradeState extends State<InputGrade> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Padding(
-                padding: EdgeInsets.only(left: 8, bottom: 15),
-                child: Text("Identitas Siswa", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo)),
+              Padding(
+                padding: const EdgeInsets.only(left: 8, bottom: 15),
+                child: Text(
+                  "Identitas Siswa", 
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: headingColor)
+                ),
               ),
               
-              _buildStudentDropdown(), // DROPDOWN
+              _buildStudentDropdown(context), // DROPDOWN
 
-              _buildTextField(controller: subjectC, label: 'Mata Pelajaran', icon: Icons.menu_book_rounded),
+              _buildTextField(context, controller: subjectC, label: 'Mata Pelajaran', icon: Icons.menu_book_rounded),
 
               const SizedBox(height: 15),
               const Divider(),
               const SizedBox(height: 15),
               
-              const Padding(
-                padding: EdgeInsets.only(left: 8, bottom: 15),
-                child: Text("Input Penilaian", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.indigo)),
+              Padding(
+                padding: const EdgeInsets.only(left: 8, bottom: 15),
+                child: Text(
+                  "Input Penilaian", 
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: headingColor)
+                ),
               ),
 
-              _buildTextField(controller: tugasC, label: 'Nilai Tugas', icon: Icons.assignment_outlined, isNumber: true),
+              _buildTextField(context, controller: tugasC, label: 'Nilai Tugas', icon: Icons.assignment_outlined, isNumber: true),
               
               Row(
                 children: [
-                  Expanded(child: _buildTextField(controller: utsC, label: 'Nilai UTS', icon: Icons.fact_check_outlined, isNumber: true)),
+                  Expanded(child: _buildTextField(context, controller: utsC, label: 'Nilai UTS', icon: Icons.fact_check_outlined, isNumber: true)),
                   const SizedBox(width: 15),
-                  Expanded(child: _buildTextField(controller: uasC, label: 'Nilai UAS', icon: Icons.history_edu_outlined, isNumber: true)),
+                  Expanded(child: _buildTextField(context, controller: uasC, label: 'Nilai UAS', icon: Icons.history_edu_outlined, isNumber: true)),
                 ],
               ),
               
@@ -233,6 +270,7 @@ class _InputGradeState extends State<InputGrade> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.indigo,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                   ),
                   onPressed: () async {
@@ -260,7 +298,7 @@ class _InputGradeState extends State<InputGrade> {
                       }
                     }
                   },
-                  child: const Text('Simpan Data', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  child: const Text('Simpan Data', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(height: 30),

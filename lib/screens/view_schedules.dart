@@ -5,12 +5,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 class ViewSchedulePage extends StatelessWidget {
   final String uidGuru = FirebaseAuth.instance.currentUser!.uid;
 
-  // --- 1. DEFINE WARNA & STYLE (Sama persis dengan Page Siswa) ---
+  // --- 1. CONSTANTS (Tetap disimpan untuk branding) ---
   final Color rgPrimary = const Color(0xFF3ecfde);
   final Color rgAccent = const Color(0xFF28b5c5);
-  final Color bgGrey = const Color(0xFFF4F7F9);
-  final Color textDark = const Color(0xFF4A4A4A);
-  final Color textGrey = const Color(0xFF9B9B9B);
 
   // --- 2. HELPER SORTING HARI ---
   int getDayOrder(String? hari) {
@@ -28,17 +25,27 @@ class ViewSchedulePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Deteksi Tema
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // 2. Tentukan Warna UI Dinamis
+    final scaffoldBg = isDark ? null : const Color(0xFFF4F7F9);
+    final cardColor = isDark ? Theme.of(context).cardColor : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF4A4A4A);
+    final subTextColor = isDark ? Colors.white70 : const Color(0xFF9B9B9B);
+    final bannerColor = isDark ? Theme.of(context).cardColor : Colors.white;
+
     return Scaffold(
-      backgroundColor: bgGrey, // Background abu-abu muda
+      backgroundColor: scaffoldBg, 
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent, // Transparan agar ikut scaffold
         centerTitle: true,
-        iconTheme: IconThemeData(color: textDark),
+        iconTheme: IconThemeData(color: textColor), // Icon back dinamis
         title: Text(
           "Jadwal Mengajar",
           style: TextStyle(
-            color: textDark,
+            color: textColor,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
@@ -51,8 +58,12 @@ class ViewSchedulePage extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+              color: bannerColor, // <-- Warna banner dinamis
+              border: Border(
+                bottom: BorderSide(
+                  color: isDark ? Colors.white10 : Colors.grey.shade200
+                )
+              ),
             ),
             child: Row(
               children: [
@@ -61,7 +72,7 @@ class ViewSchedulePage extends StatelessWidget {
                 Text(
                   "Daftar Kelas Mengajar Anda",
                   style: TextStyle(
-                    color: textDark,
+                    color: textColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -88,38 +99,36 @@ class ViewSchedulePage extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.free_breakfast_outlined, size: 60, color: Colors.grey[300]),
+                        Icon(Icons.free_breakfast_outlined, size: 60, color: subTextColor),
                         const SizedBox(height: 10),
                         Text(
                           "Anda belum memiliki jadwal mengajar",
-                          style: TextStyle(color: textGrey),
+                          style: TextStyle(color: subTextColor),
                         ),
                       ],
                     ),
                   );
                 }
 
-                // --- LOGIKA SORTING (Sama seperti Page Siswa) ---
+                // --- LOGIKA SORTING ---
                 List<QueryDocumentSnapshot> docs = snapshot.data!.docs.toList();
 
                 docs.sort((a, b) {
                   final dataA = a.data() as Map<String, dynamic>;
                   final dataB = b.data() as Map<String, dynamic>;
 
-                  // 1. Sort by HARI
                   int orderA = getDayOrder(dataA['hari']);
                   int orderB = getDayOrder(dataB['hari']);
                   
                   if (orderA != orderB) {
                     return orderA.compareTo(orderB);
                   } else {
-                    // 2. Sort by JAM
                     String jamA = dataA['jam_mulai'] ?? "";
                     String jamB = dataB['jam_mulai'] ?? "";
                     return jamA.compareTo(jamB);
                   }
                 });
-                // -----------------------------------------------
+                // ---------------------
 
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
@@ -127,25 +136,26 @@ class ViewSchedulePage extends StatelessWidget {
                   itemBuilder: (context, i) {
                     final data = docs[i].data() as Map<String, dynamic>;
 
-                    // Ambil data (Safe Handling)
                     String mapel = data['mapel'] ?? "Tanpa Mapel";
                     String hari = data['hari'] ?? "-";
                     String jamMulai = data['jam_mulai'] ?? "--:--";
                     String jamSelesai = data['jam_selesai'] ?? "--:--";
-                    // Note: Jika ada field 'kelas' di database, bisa ditampilkan juga disini.
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: cardColor, // <-- Warna kartu dinamis
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            // Shadow dikurangi saat dark mode
+                            color: isDark ? Colors.transparent : Colors.black.withOpacity(0.05),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
                         ],
+                        // Tambahan border tipis di dark mode
+                        border: isDark ? Border.all(color: Colors.white10) : null,
                       ),
                       child: IntrinsicHeight(
                         child: Row(
@@ -175,7 +185,7 @@ class ViewSchedulePage extends StatelessWidget {
                                     "s/d",
                                     style: TextStyle(
                                       fontSize: 10,
-                                      color: textGrey,
+                                      color: subTextColor,
                                     ),
                                   ),
                                   Text(
@@ -222,25 +232,25 @@ class ViewSchedulePage extends StatelessWidget {
                                       style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
-                                        color: textDark,
+                                        color: textColor, // <-- Teks judul dinamis
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     const SizedBox(height: 6),
 
-                                    // Info tambahan (Misal: Mengajar)
+                                    // Info tambahan
                                     Row(
                                       children: [
-                                        Icon(Icons.class_outlined, // Ganti icon person jadi class
-                                            size: 16, color: textGrey),
+                                        Icon(Icons.class_outlined,
+                                            size: 16, color: subTextColor),
                                         const SizedBox(width: 4),
                                         Expanded(
                                           child: Text(
-                                            "Pengajar: Anda", // Karena ini view Guru
+                                            "Pengajar: Anda",
                                             style: TextStyle(
                                               fontSize: 14,
-                                              color: textGrey,
+                                              color: subTextColor, // <-- Teks sub dinamis
                                             ),
                                           ),
                                         ),

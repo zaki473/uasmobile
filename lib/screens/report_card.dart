@@ -23,7 +23,6 @@ class _ReportCardState extends State<ReportCard> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = Provider.of<AuthProvider>(context, listen: false);
-      // Pastikan user ada sebelum fetch
       if (auth.currentUser != null) {
         Provider.of<GradeProvider>(context, listen: false)
             .fetchGrades(auth.currentUser!.id);
@@ -38,7 +37,7 @@ class _ReportCardState extends State<ReportCard> {
   }
 
   // ----------------------------------------------------------
-  // FUNGSI GENERATE PDF
+  // FUNGSI GENERATE PDF (TETAP STANDAR PUTIH UNTUK PRINTING)
   // ----------------------------------------------------------
   Future<void> _generatePdf(List<Grade> grades, double average, String studentName) async {
     final doc = pw.Document();
@@ -98,7 +97,6 @@ class _ReportCardState extends State<ReportCard> {
       ),
     );
 
-    // Membuka dialog print/share
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => doc.save(),
     );
@@ -107,12 +105,17 @@ class _ReportCardState extends State<ReportCard> {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context, listen: false);
-    
-    // Ambil nama user untuk ditampilkan di PDF (Default "Siswa" jika null)
     final studentName = auth.currentUser?.name ?? "Siswa";
 
+    // 1. Deteksi Tema
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // 2. Warna UI
+    final scaffoldBg = isDark ? null : Colors.grey[100];
+    final loadingTextColor = isDark ? Colors.white70 : Colors.black54;
+
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
         title: const Text('Rapor Belajar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
@@ -131,20 +134,25 @@ class _ReportCardState extends State<ReportCard> {
       body: Consumer<GradeProvider>(
         builder: (context, gradeProv, child) {
           if (gradeProv.isLoading) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('Memuat data rapor...'),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text('Memuat data rapor...', style: TextStyle(color: loadingTextColor)),
                 ],
               ),
             );
           }
 
           if (gradeProv.grades.isEmpty) {
-            return const Center(child: Text('Data nilai belum tersedia.'));
+            return Center(
+              child: Text(
+                'Data nilai belum tersedia.', 
+                style: TextStyle(color: loadingTextColor)
+              )
+            );
           }
 
           return Column(
@@ -157,12 +165,11 @@ class _ReportCardState extends State<ReportCard> {
                     final grade = gradeProv.grades[index];
                     return _AnimatedListItem(
                       index: index,
-                      child: _buildGradeCard(grade),
+                      child: _buildGradeCard(grade), // Pass grade only
                     );
                   },
                 ),
               ),
-              // Panggil widget summary card di sini
               _buildSummaryCard(gradeProv, studentName),
             ],
           );
@@ -173,11 +180,24 @@ class _ReportCardState extends State<ReportCard> {
 
   Widget _buildGradeCard(Grade grade) {
     final gradeColor = _getGradeColor(grade.finalScore);
+    
+    // Variabel tema untuk Card
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? Theme.of(context).cardColor : Colors.white;
+    final titleColor = isDark ? Colors.white : Colors.black87;
+    final subtitleColor = isDark ? Colors.white70 : Colors.grey[600];
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
-      shadowColor: Colors.black26,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      // Shadow transparan di dark mode
+      shadowColor: isDark ? Colors.transparent : Colors.black26,
+      color: cardBg,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        // Tambah border tipis di dark mode
+        side: isDark ? const BorderSide(color: Colors.white10) : BorderSide.none
+      ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         child: Row(
@@ -190,13 +210,14 @@ class _ReportCardState extends State<ReportCard> {
                     grade.subject,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: titleColor, // <-- Dinamis
                         ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Tugas: ${grade.tugas} • UTS: ${grade.uts} • UAS: ${grade.uas}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
+                          color: subtitleColor, // <-- Dinamis
                         ),
                   ),
                 ],
@@ -237,26 +258,31 @@ class _ReportCardState extends State<ReportCard> {
   }
   
   // ----------------------------------------------------------
-  // WIDGET SUMMARY & TOMBOL EXPORT
+  // WIDGET SUMMARY
   // ----------------------------------------------------------
   Widget _buildSummaryCard(GradeProvider gradeProv, String studentName) {
-    // FIX: Panggil getAverage() TANPA parameter studentId
-    // Ini memastikan rata-rata dihitung dari data yang TAMPIL di layar
     final average = gradeProv.getAverage();
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? Theme.of(context).cardColor : Colors.white;
+    final labelColor = isDark ? Colors.white70 : Colors.grey[600];
+    final valueColor = isDark ? Colors.blue.shade300 : Colors.blue.shade700;
     
     return Container(
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
+            color: isDark ? Colors.transparent : Colors.grey.withOpacity(0.2),
             spreadRadius: 2,
             blurRadius: 5,
             offset: const Offset(0, 3),
           ),
         ],
+        // Border tipis di dark mode
+        border: isDark ? Border.all(color: Colors.white10) : null,
       ),
       child: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -269,14 +295,14 @@ class _ReportCardState extends State<ReportCard> {
               children: [
                 Text(
                   'Rata-rata Nilai',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: Colors.grey[600]),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: labelColor),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   average.toStringAsFixed(2),
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue.shade700,
+                        color: valueColor,
                       ),
                 ),
               ],
@@ -304,7 +330,7 @@ class _ReportCardState extends State<ReportCard> {
   }
 }
 
-// Widget Animasi List
+// Widget Animasi List (Tetap)
 class _AnimatedListItem extends StatefulWidget {
   final int index;
   final Widget child;

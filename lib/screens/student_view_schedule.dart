@@ -8,12 +8,9 @@ class StudentViewSchedulePage extends StatefulWidget {
 }
 
 class _StudentViewSchedulePageState extends State<StudentViewSchedulePage> {
-  // Warna khas Ruangguru (Cyan/Light Blue palette)
+  // Warna khas Ruangguru (Branding tetap)
   final Color rgPrimary = const Color(0xFF3ecfde);
   final Color rgAccent = const Color(0xFF28b5c5);
-  final Color bgGrey = const Color(0xFFF4F7F9);
-  final Color textDark = const Color(0xFF4A4A4A);
-  final Color textGrey = const Color(0xFF9B9B9B);
 
   // Helper untuk menentukan urutan hari
   int getDayOrder(String? hari) {
@@ -25,23 +22,34 @@ class _StudentViewSchedulePageState extends State<StudentViewSchedulePage> {
       case 'jumat': return 5;
       case 'sabtu': return 6;
       case 'minggu': return 7;
-      default: return 8; // Untuk data yg harinya typo atau kosong ditaruh paling bawah
+      default: return 8; 
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // 1. Deteksi Tema
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // 2. Tentukan Warna UI Dinamis
+    final scaffoldBg = isDark ? null : const Color(0xFFF4F7F9);
+    final cardColor = isDark ? Theme.of(context).cardColor : Colors.white;
+    final bannerColor = isDark ? Theme.of(context).cardColor : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF4A4A4A);
+    final subTextColor = isDark ? Colors.white70 : const Color(0xFF9B9B9B);
+    final borderColor = isDark ? Colors.white10 : Colors.grey.shade200;
+
     return Scaffold(
-      backgroundColor: bgGrey,
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent, // Transparan agar ikut scaffold
         centerTitle: true,
-        iconTheme: IconThemeData(color: textDark),
+        iconTheme: IconThemeData(color: textColor),
         title: Text(
           "Jadwal Pelajaran",
           style: TextStyle(
-            color: textDark,
+            color: textColor,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
@@ -54,8 +62,8 @@ class _StudentViewSchedulePageState extends State<StudentViewSchedulePage> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+              color: bannerColor, // <-- Banner dinamis
+              border: Border(bottom: BorderSide(color: borderColor)),
             ),
             child: Row(
               children: [
@@ -64,7 +72,7 @@ class _StudentViewSchedulePageState extends State<StudentViewSchedulePage> {
                 Text(
                   "Jadwal Pelajaran Hari Ini",
                   style: TextStyle(
-                    color: textDark,
+                    color: textColor,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -89,40 +97,36 @@ class _StudentViewSchedulePageState extends State<StudentViewSchedulePage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.event_busy, size: 60, color: Colors.grey[300]),
+                        Icon(Icons.event_busy, size: 60, color: subTextColor),
                         const SizedBox(height: 10),
                         Text(
                           "Belum ada jadwal pelajaran",
-                          style: TextStyle(color: textGrey),
+                          style: TextStyle(color: subTextColor),
                         ),
                       ],
                     ),
                   );
                 }
 
-                // --- LOGIKA SORTING (PENGURUTAN) ---
-                // 1. Ambil semua docs
+                // --- LOGIKA SORTING ---
                 List<QueryDocumentSnapshot> docs = snapshot.data!.docs.toList();
 
-                // 2. Lakukan sorting manual
                 docs.sort((a, b) {
                   final dataA = a.data() as Map<String, dynamic>;
                   final dataB = b.data() as Map<String, dynamic>;
 
-                  // Sort level 1: Berdasarkan HARI
                   int orderA = getDayOrder(dataA['hari']);
                   int orderB = getDayOrder(dataB['hari']);
                   
                   if (orderA != orderB) {
                     return orderA.compareTo(orderB);
                   } else {
-                    // Sort level 2: Jika harinya sama, urutkan berdasarkan JAM MULAI
                     String jamA = dataA['jam_mulai'] ?? "";
                     String jamB = dataB['jam_mulai'] ?? "";
                     return jamA.compareTo(jamB);
                   }
                 });
-                // --- END LOGIKA SORTING ---
+                // ---------------------
 
                 return ListView.builder(
                   padding: const EdgeInsets.all(16),
@@ -139,15 +143,18 @@ class _StudentViewSchedulePageState extends State<StudentViewSchedulePage> {
                     return Container(
                       margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: cardColor, // <-- Warna kartu dinamis
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            // Shadow transparan di dark mode
+                            color: isDark ? Colors.transparent : Colors.black.withOpacity(0.05),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
                         ],
+                        // Border tipis di dark mode
+                        border: isDark ? Border.all(color: Colors.white10) : null,
                       ),
                       child: IntrinsicHeight(
                         child: Row(
@@ -177,7 +184,7 @@ class _StudentViewSchedulePageState extends State<StudentViewSchedulePage> {
                                     "s/d",
                                     style: TextStyle(
                                       fontSize: 10,
-                                      color: textGrey,
+                                      color: subTextColor,
                                     ),
                                   ),
                                   Text(
@@ -208,7 +215,7 @@ class _StudentViewSchedulePageState extends State<StudentViewSchedulePage> {
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
-                                        hari, // Pastikan data di DB tulisannya misal "Senin"
+                                        hari,
                                         style: const TextStyle(
                                           color: Colors.orange,
                                           fontSize: 10,
@@ -224,7 +231,7 @@ class _StudentViewSchedulePageState extends State<StudentViewSchedulePage> {
                                       style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
-                                        color: textDark,
+                                        color: textColor, // <-- Teks judul dinamis
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -235,14 +242,14 @@ class _StudentViewSchedulePageState extends State<StudentViewSchedulePage> {
                                     Row(
                                       children: [
                                         Icon(Icons.person_outline,
-                                            size: 16, color: textGrey),
+                                            size: 16, color: subTextColor),
                                         const SizedBox(width: 4),
                                         Expanded(
                                           child: Text(
                                             guru,
                                             style: TextStyle(
                                               fontSize: 14,
-                                              color: textGrey,
+                                              color: subTextColor, // <-- Teks sub dinamis
                                             ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,

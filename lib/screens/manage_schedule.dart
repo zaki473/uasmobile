@@ -10,13 +10,10 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
   final CollectionReference scheduleCollection = FirebaseFirestore.instance
       .collection('jadwal_pelajaran');
 
-  // --- STYLE CONSTANTS ---
+  // --- STYLE CONSTANTS (Branding tetap, warna UI dinamis) ---
   final Color rgPrimary = const Color(0xFF3ecfde);
   final Color rgAccent = const Color(0xFF28b5c5);
-  final Color bgGrey = const Color(0xFFF4F7F9);
-  final Color textDark = const Color(0xFF4A4A4A);
-  final Color textGrey = const Color(0xFF9B9B9B);
-
+  
   // Controllers
   final TextEditingController mapelC = TextEditingController();
   final TextEditingController hariC = TextEditingController();
@@ -50,11 +47,13 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
         .where('role', isEqualTo: 'guru')
         .get();
 
-    guruList = snapshot.docs
-        .map((d) => {'id': d.id, 'nama': d['nama']})
-        .toList();
-
-    setState(() {});
+    if (mounted) {
+      setState(() {
+        guruList = snapshot.docs
+            .map((d) => {'id': d.id, 'nama': d['nama']})
+            .toList();
+      });
+    }
   }
 
   @override
@@ -72,26 +71,32 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
     selectedGuruName = null;
   }
 
-  // Field Widget Styled
-  Widget field(String label, TextEditingController c) {
+  // Field Widget Styled & Dark Mode Aware
+  Widget field(BuildContext context, String label, TextEditingController c) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fillColor = isDark ? Colors.white.withOpacity(0.05) : Colors.grey[50];
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final labelColor = isDark ? Colors.white70 : Colors.grey;
+
     return Padding(
-      padding: EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: 16),
       child: TextField(
         controller: c,
+        style: TextStyle(color: textColor), // Warna teks input
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: textGrey),
+          labelStyle: TextStyle(color: labelColor),
           filled: true,
-          fillColor: Colors.grey[50],
+          fillColor: fillColor,
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey.shade300),
+            borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey.shade300),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: rgPrimary, width: 2),
           ),
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
     );
@@ -106,24 +111,32 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
     showDialog(
       context: context,
       builder: (context) {
+        // Cek tema di dalam dialog builder
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final bgColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+        final textColor = isDark ? Colors.white : const Color(0xFF4A4A4A);
+        final inputFill = isDark ? Colors.white.withOpacity(0.05) : Colors.grey[50];
+
         return AlertDialog(
+          backgroundColor: bgColor,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text("Tambah Jadwal", style: TextStyle(fontWeight: FontWeight.bold, color: textDark)),
+          title: Text("Tambah Jadwal", style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                field("Mata Pelajaran", mapelC),
+                field(context, "Mata Pelajaran", mapelC),
                 
                 // Styling Dropdown
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: DropdownButtonFormField<String>(
+                    dropdownColor: bgColor,
                     value: selectedGuruId,
                     items: guruList.map((guru) {
                       return DropdownMenuItem<String>(
                         value: guru['id'],
-                        child: Text(guru['nama']),
+                        child: Text(guru['nama'], style: TextStyle(color: textColor)),
                       );
                     }).toList(),
                     onChanged: (value) {
@@ -136,12 +149,12 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
                     },
                     decoration: InputDecoration(
                       labelText: "Guru Pengajar",
-                      labelStyle: TextStyle(color: textGrey),
+                      labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.grey),
                       filled: true,
-                      fillColor: Colors.grey[50],
+                      fillColor: inputFill,
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
+                        borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey.shade300),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -151,12 +164,12 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
                   ),
                 ),
 
-                field("Hari (ex: Senin)", hariC),
+                field(context, "Hari (ex: Senin)", hariC),
                 Row(
                   children: [
-                    Expanded(child: field("Mulai (07:00)", mulaiC)),
-                    SizedBox(width: 10),
-                    Expanded(child: field("Selesai (08:40)", selesaiC)),
+                    Expanded(child: field(context, "Mulai (07:00)", mulaiC)),
+                    const SizedBox(width: 10),
+                    Expanded(child: field(context, "Selesai (08:40)", selesaiC)),
                   ],
                 ),
               ],
@@ -164,7 +177,7 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
           ),
           actions: [
             TextButton(
-              child: Text("Batal", style: TextStyle(color: textGrey)),
+              child: Text("Batal", style: TextStyle(color: isDark ? Colors.white70 : Colors.grey)),
               onPressed: () => Navigator.pop(context),
             ),
             ElevatedButton(
@@ -173,7 +186,7 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 elevation: 0,
               ),
-              child: Text("Simpan", style: TextStyle(color: Colors.white)),
+              child: const Text("Simpan", style: TextStyle(color: Colors.white)),
               onPressed: () async {
                 if (selectedGuruId == null) return;
 
@@ -186,7 +199,7 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
                   "jam_selesai": selesaiC.text,
                 });
 
-                Navigator.pop(context);
+                if(context.mounted) Navigator.pop(context);
               },
             ),
           ],
@@ -210,23 +223,30 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
     showDialog(
       context: context,
       builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final bgColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+        final textColor = isDark ? Colors.white : const Color(0xFF4A4A4A);
+        final inputFill = isDark ? Colors.white.withOpacity(0.05) : Colors.grey[50];
+
         return AlertDialog(
+          backgroundColor: bgColor,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text("Edit Jadwal", style: TextStyle(fontWeight: FontWeight.bold, color: textDark)),
+          title: Text("Edit Jadwal", style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                field("Mata Pelajaran", mapelC),
+                field(context, "Mata Pelajaran", mapelC),
                 
                 Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: DropdownButtonFormField<String>(
+                    dropdownColor: bgColor,
                     value: selectedGuruId,
                     items: guruList.map((guru) {
                       return DropdownMenuItem<String>(
                         value: guru['id'],
-                        child: Text(guru['nama']),
+                        child: Text(guru['nama'], style: TextStyle(color: textColor)),
                       );
                     }).toList(),
                     onChanged: (value) {
@@ -239,12 +259,12 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
                     },
                     decoration: InputDecoration(
                       labelText: "Guru Pengajar",
-                      labelStyle: TextStyle(color: textGrey),
+                      labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.grey),
                       filled: true,
-                      fillColor: Colors.grey[50],
+                      fillColor: inputFill,
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
+                        borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey.shade300),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -254,12 +274,12 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
                   ),
                 ),
 
-                field("Hari (ex: Senin)", hariC),
+                field(context, "Hari (ex: Senin)", hariC),
                 Row(
                   children: [
-                    Expanded(child: field("Mulai", mulaiC)),
-                    SizedBox(width: 10),
-                    Expanded(child: field("Selesai", selesaiC)),
+                    Expanded(child: field(context, "Mulai", mulaiC)),
+                    const SizedBox(width: 10),
+                    Expanded(child: field(context, "Selesai", selesaiC)),
                   ],
                 ),
               ],
@@ -267,7 +287,7 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
           ),
           actions: [
             TextButton(
-              child: Text("Batal", style: TextStyle(color: textGrey)),
+              child: Text("Batal", style: TextStyle(color: isDark ? Colors.white70 : Colors.grey)),
               onPressed: () => Navigator.pop(context),
             ),
             ElevatedButton(
@@ -276,7 +296,7 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 elevation: 0,
               ),
-              child: Text("Update", style: TextStyle(color: Colors.white)),
+              child: const Text("Update", style: TextStyle(color: Colors.white)),
               onPressed: () async {
                 await scheduleCollection.doc(id).update({
                   "mapel": mapelC.text,
@@ -286,7 +306,7 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
                   "jam_mulai": mulaiC.text,
                   "jam_selesai": selesaiC.text,
                 });
-                Navigator.pop(context); // Close dialog
+                if(context.mounted) Navigator.pop(context);
               },
             ),
           ],
@@ -296,16 +316,15 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
   }
 
   void deleteJadwal(String id) async {
-    // Menambahkan konfirmasi hapus agar lebih aman (Opsional UI improvement)
     showDialog(
       context: context,
       builder: (c) => AlertDialog(
-        title: Text("Hapus Jadwal?"),
-        content: Text("Data tidak dapat dikembalikan."),
+        title: const Text("Hapus Jadwal?"),
+        content: const Text("Data tidak dapat dikembalikan."),
         actions: [
-          TextButton(child: Text("Batal"), onPressed: () => Navigator.pop(c)),
+          TextButton(child: const Text("Batal"), onPressed: () => Navigator.pop(c)),
           TextButton(
-            child: Text("Hapus", style: TextStyle(color: Colors.red)),
+            child: const Text("Hapus", style: TextStyle(color: Colors.red)),
             onPressed: () async {
                Navigator.pop(c);
                await scheduleCollection.doc(id).delete();
@@ -318,17 +337,27 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Deteksi Mode
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // 2. Tentukan Warna UI Utama
+    final scaffoldBg = isDark ? null : const Color(0xFFF4F7F9);
+    final cardColor = isDark ? Theme.of(context).cardColor : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF4A4A4A);
+    final subtitleColor = isDark ? Colors.white70 : const Color(0xFF9B9B9B);
+    final iconColor = isDark ? Colors.white70 : const Color(0xFF4A4A4A);
+
     return Scaffold(
-      backgroundColor: bgGrey,
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent, // Transparan agar ikut tema scaffold
         centerTitle: true,
-        iconTheme: IconThemeData(color: textDark),
+        iconTheme: IconThemeData(color: iconColor),
         title: Text(
           "Kelola Jadwal",
           style: TextStyle(
-            color: textDark,
+            color: textColor,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
@@ -336,8 +365,8 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: rgPrimary,
-        icon: Icon(Icons.add, color: Colors.white),
-        label: Text("Tambah", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text("Tambah", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         onPressed: showAddDialog,
       ),
       body: StreamBuilder<QuerySnapshot>(
@@ -348,7 +377,7 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
           }
 
           if (snapshot.data!.docs.isEmpty) {
-            return Center(child: Text("Belum ada data jadwal.", style: TextStyle(color: textGrey)));
+            return Center(child: Text("Belum ada data jadwal.", style: TextStyle(color: subtitleColor)));
           }
 
           // --- LOGIKA SORTING (HARI & JAM) ---
@@ -372,23 +401,25 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
           // -----------------------------------
 
           return ListView.builder(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             itemCount: docs.length,
             itemBuilder: (context, i) {
               final data = docs[i].data() as Map<String, dynamic>;
 
               return Container(
-                margin: EdgeInsets.only(bottom: 12),
+                margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: cardColor, // <-- Warna kartu dinamis
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: isDark ? Colors.transparent : Colors.black.withOpacity(0.05),
                       blurRadius: 10,
-                      offset: Offset(0, 4),
+                      offset: const Offset(0, 4),
                     ),
                   ],
+                  // Tambah border tipis di dark mode biar kartu terlihat jelas
+                  border: isDark ? Border.all(color: Colors.white10) : null,
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -396,7 +427,7 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
                     children: [
                       // Kolom Waktu
                       Container(
-                        padding: EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: rgPrimary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
@@ -407,7 +438,7 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
                               data['jam_mulai'] ?? "--:--",
                               style: TextStyle(fontWeight: FontWeight.bold, color: rgAccent),
                             ),
-                            Text("-", style: TextStyle(fontSize: 10, color: textGrey)),
+                            Text("-", style: TextStyle(fontSize: 10, color: subtitleColor)),
                             Text(
                               data['jam_selesai'] ?? "--:--",
                               style: TextStyle(fontWeight: FontWeight.w600, color: rgAccent, fontSize: 12),
@@ -416,7 +447,7 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
                         ),
                       ),
                       
-                      SizedBox(width: 16),
+                      const SizedBox(width: 16),
 
                       // Kolom Detail
                       Expanded(
@@ -424,7 +455,7 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
                                 color: Colors.orangeAccent.withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(4),
@@ -434,14 +465,14 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
                                 style: TextStyle(color: Colors.orange[800], fontSize: 10, fontWeight: FontWeight.bold),
                               ),
                             ),
-                            SizedBox(height: 4),
+                            const SizedBox(height: 4),
                             Text(
                               data['mapel'] ?? "-",
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textDark),
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: textColor),
                             ),
                             Text(
                               data['guru'] ?? "-",
-                              style: TextStyle(color: textGrey, fontSize: 13),
+                              style: TextStyle(color: subtitleColor, fontSize: 13),
                             ),
                           ],
                         ),
@@ -456,23 +487,23 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: IconButton(
-                              icon: Icon(Icons.edit_rounded, color: Colors.blue, size: 20),
-                              constraints: BoxConstraints(minHeight: 36, minWidth: 36),
+                              icon: const Icon(Icons.edit_rounded, color: Colors.blue, size: 20),
+                              constraints: const BoxConstraints(minHeight: 36, minWidth: 36),
                               padding: EdgeInsets.zero,
                               onPressed: () {
                                 showEditDialog(docs[i].id, data);
                               },
                             ),
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Container(
                             decoration: BoxDecoration(
                               color: Colors.red.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: IconButton(
-                              icon: Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
-                              constraints: BoxConstraints(minHeight: 36, minWidth: 36),
+                              icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                              constraints: const BoxConstraints(minHeight: 36, minWidth: 36),
                               padding: EdgeInsets.zero,
                               onPressed: () {
                                 deleteJadwal(docs[i].id);
