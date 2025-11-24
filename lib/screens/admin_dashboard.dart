@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uasmobile/screens/admin_announcement.dart';
 import '../providers/auth_provider.dart';
 import 'manage_students.dart';
 import 'manage_teachers.dart';
@@ -45,49 +46,47 @@ class _AdminDashboardState extends State<AdminDashboard>
     super.dispose();
   }
 
-  final List<Map<String, dynamic>> _menuItems = [
-    {
-      'title': 'Kelola Siswa',
-      'subtitle': 'Data siswa & kelas',
-      'icon': Icons.people_alt_outlined,
-      'color': Colors.teal,
-      'page': const ManageStudents(),
-    },
-    {
-      'title': 'Kelola Guru',
-      'subtitle': 'Data guru & mata pelajaran',
-      'icon': Icons.person_outline,
-      'color': Colors.green,
-      'page': const ManageTeachers(),
-    },
-    {
-      'title': 'Pengumuman',
-      'subtitle': 'Info & berita',
-      'icon': Icons.campaign_outlined,
-      'color': Colors.orange,
-      'page': Scaffold(
-        appBar: AppBar(title: const Text('Pengumuman')),
-        body: const Center(child: Text('Halaman Pengumuman')),
-      ),
-    },
-    {
-      'title': 'Jadwal',
-      'subtitle': 'Jadwal pelajaran',
-      'icon': Icons.calendar_today_outlined,
-      'color': Colors.blue,
-      'page': ManageSchedulePage(),
-    },
-    {
-      'title': 'Laporan',
-      'subtitle': 'Laporan nilai',
-      'icon': Icons.assessment_outlined,
-      'color': Colors.purple,
-      'page': Scaffold(
-        appBar: AppBar(title: const Text('Laporan Nilai')),
-        body: const Center(child: Text('Halaman Laporan')),
-      ),
-    },
-  ];
+ final List<Map<String, dynamic>> _menuItems = [
+  {
+    'title': 'Kelola Siswa',
+    'subtitle': 'Data siswa & kelas',
+    'icon': Icons.people_alt_outlined,
+    'color': Colors.teal,
+    'page': const ManageStudents(),
+  },
+  {
+    'title': 'Kelola Guru',
+    'subtitle': 'Data guru & mata pelajaran',
+    'icon': Icons.person_outline,
+    'color': Colors.green,
+    'page': const ManageTeachers(),
+  },
+  {
+    'title': 'Pengumuman',
+    'subtitle': 'Info & berita',
+    'icon': Icons.campaign_outlined,
+    'color': Colors.orange,
+    'page': const AdminAnnouncement(),
+  },
+  {
+    'title': 'Jadwal',
+    'subtitle': 'Jadwal pelajaran',
+    'icon': Icons.calendar_today_outlined,
+    'color': Colors.blue,
+    'page': ManageSchedulePage(),
+  },
+  {
+    'title': 'Laporan',
+    'subtitle': 'Laporan nilai',
+    'icon': Icons.assessment_outlined,
+    'color': Colors.purple,
+    'page': Scaffold(
+      appBar: AppBar(title: const Text('Laporan Nilai')),
+      body: const Center(child: Text('Halaman Laporan')),
+    ),
+  },
+];
+
 
   @override
   Widget build(BuildContext context) {

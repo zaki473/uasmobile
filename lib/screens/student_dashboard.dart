@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uasmobile/screens/student_announcement.dart';
 import '../providers/auth_provider.dart';
 import 'student_view_schedule.dart';
 import 'report_card.dart';
 import 'login_screen.dart';
+
+
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -35,6 +38,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
       'icon': Icons.pie_chart_rounded,
       'color': const Color(0xFFFFA726),
       'page': const ReportCard(),
+    },
+    {
+      'title': 'Pengumuman',
+      'subtitle': 'Info sekolah',
+      'icon': Icons.campaign_rounded,
+      'color': Colors.blue,
+      'page': const StudentAnnouncement(),
     },
     {
       'title': 'Materi Belajar',

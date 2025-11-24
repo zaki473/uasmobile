@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uasmobile/screens/teacher_announcement.dart';
 import '../providers/auth_provider.dart';
 import 'view_schedules.dart';
 import 'input_grade.dart';
@@ -16,31 +17,29 @@ class TeacherDashboard extends StatefulWidget {
 class _TeacherDashboardState extends State<TeacherDashboard> {
   // 2. Daftar menu untuk kemudahan pengelolaan
   final List<Map<String, dynamic>> _menuItems = [
-    {
-      'title': 'Input Nilai',
-      'subtitle': 'Masukkan nilai siswa',
-      'icon': Icons.edit_note_outlined,
-      'color': Colors.green,
-      'page': const InputGrade(),
-    },
-    {
-      'title': 'Pengumuman',
-      'subtitle': 'Pengumuman',
-      'icon': Icons.upload_file_outlined,
-      'color': Colors.orange,
-      'page': Scaffold(
-        appBar: AppBar(title: const Text('Materi Ajar')),
-        body: const Center(child: Text('Halaman Materi Ajar')),
-      ),
-    },
-    {
-      'title': 'Jadwal Mengajar',
-      'subtitle': 'Lihat jadwal kelas Anda',
-      'icon': Icons.calendar_month_outlined,
-      'color': Colors.purple,
-      'page': ViewSchedulePage(),
-    },
-  ];
+  {
+    'title': 'Input Nilai',
+    'subtitle': 'Masukkan nilai siswa',
+    'icon': Icons.edit_note_outlined,
+    'color': Colors.green,
+    'page': const InputGrade(),
+  },
+  {
+    'title': 'Pengumuman',
+    'subtitle': 'Pengumuman untuk guru',
+    'icon': Icons.upload_file_outlined,
+    'color': Colors.orange,
+    'page': const TeacherAnnouncement(),
+  },
+  {
+    'title': 'Jadwal Mengajar',
+    'subtitle': 'Lihat jadwal kelas Anda',
+    'icon': Icons.calendar_month_outlined,
+    'color': Colors.purple,
+    'page': ViewSchedulePage(),
+  },
+];
+
 
   @override
   Widget build(BuildContext context) {
