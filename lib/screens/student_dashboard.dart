@@ -13,32 +13,34 @@ class StudentDashboard extends StatefulWidget {
 }
 
 class _StudentDashboardState extends State<StudentDashboard> {
-  // Palette Warna Ruangguru Style
+  // Palette Warna Ruangguru Style (Tetap disimpan untuk mode terang/branding)
   final Color rgPrimary = const Color(0xFF3ecfde);
   final Color rgDark = const Color(0xFF00A8E8);
-  final Color bgColor = const Color(0xFFFAFAFA);
-  final Color textDark = const Color(0xFF2D3E50);
+  
+  // Warna default mode terang
+  final Color lightBgColor = const Color(0xFFFAFAFA);
+  final Color lightTextDark = const Color(0xFF2D3E50);
 
   final List<Map<String, dynamic>> _menuItems = [
     {
       'title': 'Jadwal Pelajaran',
       'subtitle': 'Cek kelas hari ini',
       'icon': Icons.calendar_month_rounded,
-      'color': Color(0xFF4FC3F7),
+      'color': const Color(0xFF4FC3F7),
       'page': StudentViewSchedulePage(),
     },
     {
       'title': 'Lihat Rapor',
       'subtitle': 'Nilai & Absensi',
       'icon': Icons.pie_chart_rounded,
-      'color': Color(0xFFFFA726),
+      'color': const Color(0xFFFFA726),
       'page': const ReportCard(),
     },
     {
       'title': 'Materi Belajar',
       'subtitle': 'Bahan ajar guru',
       'icon': Icons.menu_book_rounded,
-      'color': Color(0xFF66BB6A),
+      'color': const Color(0xFF66BB6A),
       'page': Scaffold(
         appBar: AppBar(title: const Text('Materi Belajar')),
         body: const Center(child: Text('Halaman Materi Belajar')),
@@ -48,10 +50,10 @@ class _StudentDashboardState extends State<StudentDashboard> {
       'title': 'Tugas Rumah',
       'subtitle': 'Deadlinemu',
       'icon': Icons.assignment_rounded,
-      'color': Color(0xFFAB47BC),
+      'color': const Color(0xFFAB47BC),
       'page': Scaffold(
-          appBar: AppBar(title: Text("Tugas")), 
-          body: Center(child: Text("Fitur Segera Hadir"))),
+          appBar: AppBar(title: const Text("Tugas")), 
+          body: const Center(child: Text("Fitur Segera Hadir"))),
     },
   ];
 
@@ -60,22 +62,32 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final userName = auth.currentUser?.name ?? 'Siswa';
 
+    // 1. Cek Mode Gelap
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // 2. Tentukan Warna Berdasarkan Mode
+    final Color currentBgColor = isDark ? const Color(0xFF121212) : lightBgColor;
+    final Color currentTextColor = isDark ? Colors.white : lightTextDark;
+    
+    // Warna kartu: Putih di Light mode, Abu gelap di Dark mode
+    final Color cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white; 
+
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: currentBgColor, // <-- Gunakan background dinamis
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // HEADER
-            _buildFancyHeader(context, userName, auth),
+            // HEADER (Warna gradient tetap dipertahankan karena branding)
+            _buildFancyHeader(context, userName, auth, isDark),
 
             const SizedBox(height: 20),
 
             // INFO BANNER
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: _buildInfoBanner(),
+              child: _buildInfoBanner(isDark, cardColor, currentTextColor),
             ),
 
             const SizedBox(height: 25),
@@ -88,14 +100,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: textDark,
+                  color: currentTextColor, // <-- Warna text dinamis
                 ),
               ),
             ),
 
             const SizedBox(height: 12),
 
-            // GRID MENU (COMPACT VERSION)
+            // GRID MENU
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: GridView.builder(
@@ -104,15 +116,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 itemCount: _menuItems.length,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2, 
-                  crossAxisSpacing: 12, // Jarak antar kartu horizontal
-                  mainAxisSpacing: 12,  // Jarak antar kartu vertikal
-                  childAspectRatio: 1.6, // <--- KUNCI: Angka lebih besar = Kartu lebih pendek (Ceper)
+                  crossAxisSpacing: 12, 
+                  mainAxisSpacing: 12,  
+                  childAspectRatio: 1.6, 
                 ),
                 itemBuilder: (context, index) {
                   final item = _menuItems[index];
                   return _AnimatedListItem(
                     index: index,
-                    child: _buildCompactGridCard(context, item),
+                    child: _buildCompactGridCard(context, item, isDark, cardColor, currentTextColor),
                   );
                 },
               ),
@@ -126,14 +138,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   // --- WIDGET HEADER ---
-  Widget _buildFancyHeader(BuildContext context, String name, AuthProvider auth) {
+  Widget _buildFancyHeader(BuildContext context, String name, AuthProvider auth, bool isDark) {
     return Stack(
       children: [
         Container(
-          height: 200, // Sedikit dikurangi tingginya biar proporsional
+          height: 200, 
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [rgPrimary, rgDark],
+              colors: [rgPrimary, rgDark], // Gradient tetap sama biar cantik
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -168,10 +180,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                      decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                       child: CircleAvatar(
                         radius: 20,
-                        backgroundColor: Colors.grey[200],
+                        // Background icon profil menyesuaikan
+                        backgroundColor: isDark ? Colors.grey[800] : Colors.grey[200],
                         child: Icon(Icons.person, color: rgDark, size: 20),
                       ),
                     ),
@@ -185,7 +198,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   ],
                 ),
                 const SizedBox(height: 15),
-                Text("Halo, Semangat Pagi!", style: TextStyle(color: Colors.white70, fontSize: 14)),
+                const Text("Halo, Semangat Pagi!", style: TextStyle(color: Colors.white70, fontSize: 14)),
                 const SizedBox(height: 2),
                 Text(
                   name,
@@ -201,15 +214,23 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   // --- WIDGET BANNER ---
-  Widget _buildInfoBanner() {
+  Widget _buildInfoBanner(bool isDark, Color cardColor, Color textColor) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor, // <-- Warna card dinamis
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade100),
+        border: Border.all(
+          // Border lebih tipis/hilang di dark mode biar ga kaku
+          color: isDark ? Colors.white10 : Colors.grey.shade100
+        ),
         boxShadow: [
-          BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+          // Shadow dikurangi saat dark mode
+          BoxShadow(
+            color: isDark ? Colors.black.withOpacity(0.2) : Colors.grey.withOpacity(0.05), 
+            blurRadius: 10, 
+            offset: const Offset(0, 4)
+          ),
         ],
       ),
       child: Row(
@@ -227,8 +248,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Pengumuman", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                Text("Ujian Semester dimulai tgl 20.", style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+                Text(
+                  "Pengumuman", 
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: textColor)
+                ),
+                Text(
+                  "Ujian Semester dimulai tgl 20.", 
+                  // Warna subtitle dinamis
+                  style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 11)
+                ),
               ],
             ),
           )
@@ -237,15 +265,21 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
-  // --- NEW COMPACT CARD DESIGN ---
-  Widget _buildCompactGridCard(BuildContext context, Map<String, dynamic> item) {
+  // --- COMPACT CARD DESIGN ---
+  Widget _buildCompactGridCard(
+    BuildContext context, 
+    Map<String, dynamic> item, 
+    bool isDark, 
+    Color cardColor, 
+    Color titleColor
+  ) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20), // Sudut tetap rounded
+        color: cardColor, // <-- Warna card dinamis
+        borderRadius: BorderRadius.circular(20), 
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03), // Shadow sangat halus
+            color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.03), 
             spreadRadius: 0,
             blurRadius: 10,
             offset: const Offset(0, 4),
@@ -258,9 +292,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => item['page'])),
           borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: const EdgeInsets.all(12.0), // Padding lebih kecil (Compact)
+            padding: const EdgeInsets.all(12.0), 
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center, // Center vertikal
+              mainAxisAlignment: MainAxisAlignment.center, 
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Icon di Kiri Atas
@@ -273,28 +307,29 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         color: (item['color'] as Color).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(item['icon'], color: item['color'], size: 22), // Icon size lebih kecil dikit
+                      child: Icon(item['icon'], color: item['color'], size: 22), 
                     ),
-                    // Dekorasi titik kecil di pojok kanan (opsional aesthetic)
+                    // Titik dekorasi
                     Container(
                       width: 6, height: 6,
                       decoration: BoxDecoration(
-                        color: Colors.grey[200],
+                        // Warna titik menyesuaikan
+                        color: isDark ? Colors.grey[700] : Colors.grey[200],
                         shape: BoxShape.circle,
                       ),
                     )
                   ],
                 ),
                 
-                const Spacer(), // Dorong teks ke bawah
+                const Spacer(), 
                 
                 // Teks Judul
                 Text(
                   item['title'],
                   style: TextStyle(
-                    fontSize: 14, // Font size pas
+                    fontSize: 14, 
                     fontWeight: FontWeight.w700,
-                    color: textDark,
+                    color: titleColor, // <-- Warna text dinamis
                     height: 1.2,
                   ),
                   maxLines: 2,
@@ -304,8 +339,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 Text(
                   item['subtitle'],
                   style: TextStyle(
-                    fontSize: 10, // Subtitle kecil tapi terbaca
-                    color: Colors.grey[500],
+                    fontSize: 10, 
+                    // Warna subtitle dinamis
+                    color: isDark ? Colors.grey[500] : Colors.grey[500],
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -319,7 +355,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 }
 
-// --- ANIMASI (TETAP SAMA) ---
+// --- ANIMASI (TIDAK PERLU DIUBAH) ---
 class _AnimatedListItem extends StatefulWidget {
   final int index;
   final Widget child;

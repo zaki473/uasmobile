@@ -24,18 +24,8 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
       'page': const InputGrade(),
     },
     {
-      'title': 'Absensi',
-      'subtitle': 'Kelola kehadiran siswa',
-      'icon': Icons.checklist_rtl_outlined,
-      'color': Colors.blue,
-      'page': Scaffold(
-        appBar: AppBar(title: const Text('Absensi')),
-        body: const Center(child: Text('Halaman Absensi')),
-      ),
-    },
-    {
-      'title': 'Materi Ajar',
-      'subtitle': 'Unggah & kelola materi',
+      'title': 'Pengumuman',
+      'subtitle': 'Pengumuman',
       'icon': Icons.upload_file_outlined,
       'color': Colors.orange,
       'page': Scaffold(
@@ -54,8 +44,12 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    // Cek status Dark Mode
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      // Background dinamis: Default gelap (null) jika Dark Mode, Grey[100] jika Light Mode
+      backgroundColor: isDark ? null : Colors.grey[100], 
       body: Column(
         children: [
           _buildHeader(context),
@@ -164,9 +158,15 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     required Color color,
     required Widget page,
   }) {
+    // Cek Dark mode untuk warna teks subtitle
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Card(
       elevation: 4,
-      shadowColor: Colors.black.withOpacity(0.2),
+      // Shadow color dibuat lebih halus
+      shadowColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.2),
+      // Warna Card otomatis mengikuti Theme (Putih di Light, Abu Gelap di Dark)
+      color: Theme.of(context).cardColor, 
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: InkWell(
         onTap: () {
@@ -193,14 +193,16 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                      // Warna Text otomatis ikut tema (Hitam/Putih)
                     ),
               ),
               const SizedBox(height: 4),
               Text(
                 subtitle,
                 textAlign: TextAlign.center,
+                // Warna subtitle disesuaikan agar terlihat di background gelap
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
                     ),
               ),
             ],

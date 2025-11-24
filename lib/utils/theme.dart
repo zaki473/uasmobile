@@ -1,27 +1,30 @@
+// lib/utils/theme.dart
 import 'package:flutter/material.dart';
 
-final ThemeData appTheme = ThemeData(
-  useMaterial3: true,
+// Tema Terang (yang mungkin sudah Anda punya)
+final appTheme = ThemeData(
+  brightness: Brightness.light,
   primarySwatch: Colors.blue,
+  scaffoldBackgroundColor: Colors.white,
   appBarTheme: const AppBarTheme(
     backgroundColor: Colors.blue,
     foregroundColor: Colors.white,
-    elevation: 2,
   ),
-  elevatedButtonTheme: ElevatedButtonThemeData(
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.blue,
-      foregroundColor: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-    ),
+  // ... konfigurasi lainnya
+);
+
+// Tambahkan Tema Gelap
+final darkAppTheme = ThemeData(
+  brightness: Brightness.dark,
+  primarySwatch: Colors.blue,
+  scaffoldBackgroundColor: const Color(0xFF121212), // Warna khas dark mode
+  appBarTheme: AppBarTheme(
+    backgroundColor: Colors.grey[900],
+    foregroundColor: Colors.white,
   ),
-  inputDecorationTheme: InputDecorationTheme(
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(8),
-    ),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  colorScheme: const ColorScheme.dark(
+    primary: Colors.blue,
+    secondary: Colors.blueAccent,
   ),
+  // ... sesuaikan konfigurasi teks dll
 );

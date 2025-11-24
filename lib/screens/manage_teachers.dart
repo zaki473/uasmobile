@@ -135,7 +135,7 @@ class _ManageTeachersState extends State<ManageTeachers> {
                   onPressed: () async {
                     final prov = Provider.of<TeacherProvider>(context, listen: false);
                     if (isEditing) {
-                      final t = Teacher(id: teacher!.id, name: nameC.text, subject: subjectC.text);
+                      final t = Teacher(id: teacher.id, name: nameC.text, subject: subjectC.text);
                       await prov.updateTeacher(t);
                     } else {
                       final t = Teacher(id: '', name: nameC.text, subject: subjectC.text);

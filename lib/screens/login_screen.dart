@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/theme_provider.dart'; // <-- Import ThemeProvider
 import 'admin_dashboard.dart';
 import 'teacher_dashboard.dart';
 import 'student_dashboard.dart';
@@ -26,7 +27,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _handleLogin() async {
-    // Sembunyikan keyboard
     FocusScope.of(context).unfocus();
 
     if (!mounted) return;
@@ -67,69 +67,104 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    // Ambil state theme saat ini
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
 
     return Scaffold(
-      body: Container(
-        // Latar belakang gradien yang elegan
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.blue.shade800,
-              Colors.purple.shade600,
-            ],
-          ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Bagian Header
-                const Icon(
-                  Icons.school,
-                  size: 80,
-                  color: Colors.white,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Login Akademik',
-                  textAlign: TextAlign.center,
-                  style: textTheme.headlineMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Masuk untuk melanjutkan',
-                  textAlign: TextAlign.center,
-                  style: textTheme.titleMedium?.copyWith(
-                    color: Colors.white70,
-                  ),
-                ),
-                const SizedBox(height: 40),
+      // Gunakan Stack agar tombol switch bisa ditaruh di atas background
+      body: Stack(
+        children: [
+          // Layer 1: Background
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isDark
+                    ? [ // Warna Background saat Dark Mode (Gelap)
+                        const Color(0xFF121212),
+                        const Color(0xFF2C3E50),
+                      ]
+                    : [ // Warna Background saat Light Mode (Biru Ungu)
+                        Colors.blue.shade800,
+                        Colors.purple.shade600,
+                      ],
+              ),
+            ),
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Icon(
+                      Icons.school,
+                      size: 80,
+                      color: Colors.white,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Login Akademik',
+                      textAlign: TextAlign.center,
+                      style: textTheme.headlineMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Masuk untuk melanjutkan',
+                      textAlign: TextAlign.center,
+                      style: textTheme.titleMedium?.copyWith(
+                        color: Colors.white70,
+                      ),
+                    ),
+                    const SizedBox(height: 40),
 
-                // Form Input
-                _buildEmailField(),
-                const SizedBox(height: 16),
-                _buildPasswordField(),
-                const SizedBox(height: 32),
+                    _buildEmailField(isDark),
+                    const SizedBox(height: 16),
+                    _buildPasswordField(isDark),
+                    const SizedBox(height: 32),
 
-                // Tombol Login
-                _buildLoginButton(),
-              ],
+                    _buildLoginButton(),
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
+
+          // Layer 2: Tombol Toggle Dark Mode (Pojok Kanan Atas)
+          Positioned(
+            top: 40,
+            right: 20,
+            child: SafeArea(
+              child: Row(
+                children: [
+                  Icon(
+                    isDark ? Icons.dark_mode : Icons.light_mode,
+                    color: Colors.white70,
+                  ),
+                  const SizedBox(width: 8),
+                  Switch(
+                    value: isDark,
+                    activeColor: Colors.blueAccent,
+                    onChanged: (value) {
+                      // Panggil fungsi toggleTheme di Provider
+                      themeProvider.toggleTheme(value);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildEmailField() {
+  Widget _buildEmailField(bool isDark) {
     return TextField(
       controller: emailC,
       keyboardType: TextInputType.emailAddress,
@@ -137,18 +172,20 @@ class _LoginScreenState extends State<LoginScreen> {
         labelText: 'Email',
         prefixIcon: const Icon(Icons.email_outlined),
         filled: true,
-        fillColor: Colors.black.withOpacity(0.1),
+        // Sesuaikan opacity background field agar terlihat bagus di dark/light
+        fillColor: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.1),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
         labelStyle: const TextStyle(color: Colors.white70),
+        prefixIconColor: Colors.white70,
       ),
       style: const TextStyle(color: Colors.white),
     );
   }
 
-  Widget _buildPasswordField() {
+  Widget _buildPasswordField(bool isDark) {
     return TextField(
       controller: passC,
       obscureText: !_isPasswordVisible,
@@ -167,12 +204,13 @@ class _LoginScreenState extends State<LoginScreen> {
           },
         ),
         filled: true,
-        fillColor: Colors.black.withOpacity(0.1),
+        fillColor: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.1),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
         labelStyle: const TextStyle(color: Colors.white70),
+        prefixIconColor: Colors.white70,
       ),
       style: const TextStyle(color: Colors.white),
     );
@@ -199,7 +237,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 color: Colors.blue,
               ),
             )
-          : Text(
+          : const Text(
               'Login',
               style: TextStyle(
                 fontSize: 18,

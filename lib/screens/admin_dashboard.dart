@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'manage_students.dart';
-import 'manage_teachers.dart'; // <-- langsung ManageTeachers
+import 'manage_teachers.dart';
 import 'manage_schedule.dart';
 import 'login_screen.dart';
 
@@ -58,7 +58,7 @@ class _AdminDashboardState extends State<AdminDashboard>
       'subtitle': 'Data guru & mata pelajaran',
       'icon': Icons.person_outline,
       'color': Colors.green,
-      'page': const ManageTeachers(), // <-- langsung ManageTeachers
+      'page': const ManageTeachers(),
     },
     {
       'title': 'Pengumuman',
@@ -91,8 +91,15 @@ class _AdminDashboardState extends State<AdminDashboard>
 
   @override
   Widget build(BuildContext context) {
+    // Cek apakah mode gelap sedang aktif
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      // [PERBAIKAN 1]: Background dinamis
+      // Jika Dark Mode: Gunakan default scaffold background (gelap)
+      // Jika Light Mode: Gunakan Grey[100] sesuai desain awal kamu
+      backgroundColor: isDark ? null : Colors.grey[100], 
+      
       body: Column(
         children: [
           _buildHeader(context),
@@ -201,6 +208,9 @@ class _AdminDashboardState extends State<AdminDashboard>
     required Color color,
     required Widget page,
   }) {
+    // Ambil info tema
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -213,7 +223,9 @@ class _AdminDashboardState extends State<AdminDashboard>
       child: Container(
         margin: const EdgeInsets.all(1.5),
         decoration: BoxDecoration(
-          color: Colors.white,
+          // [PERBAIKAN 2]: Warna Kartu Dinamis
+          // Gunakan cardColor dari tema (otomatis gelap jika dark mode, putih jika light mode)
+          color: Theme.of(context).cardColor, 
           borderRadius: BorderRadius.circular(18.5),
         ),
         child: InkWell(
@@ -241,15 +253,18 @@ class _AdminDashboardState extends State<AdminDashboard>
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
+                        // Warna text title otomatis menyesuaikan tema
                       ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
                   textAlign: TextAlign.center,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                  // [PERBAIKAN 3]: Warna Subtitle
+                  // Jika dark mode, gunakan grey yang lebih terang agar terbaca
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: isDark ? Colors.grey[400] : Colors.grey[600]
+                  ),
                 ),
               ],
             ),
