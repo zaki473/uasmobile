@@ -1,35 +1,35 @@
 class UserModel {
-  final String id;
+  final String uid;
   final String name;
   final String email;
   final String role;
-  final String? linkedId; // tambahkan ini
+  final String? linkedId; // <-- tambahkan ini, nullable
 
   UserModel({
-    required this.id,
+    required this.uid,
     required this.name,
     required this.email,
     required this.role,
-    this.linkedId,
+    this.linkedId, // <-- optional
   });
 
   factory UserModel.fromMap(Map<String, dynamic> map) {
     return UserModel(
-      id: map['id'] ?? '',
+      uid: map['uid'] ?? '',
       name: map['name'] ?? '',
       email: map['email'] ?? '',
       role: map['role'] ?? '',
-      linkedId: map['linkedId'],
+      linkedId: map['linkedId'], // <-- ambil dari Firestore
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
+      'uid': uid,
       'name': name,
       'email': email,
       'role': role,
-      'linkedId': linkedId,
+      'linkedId': linkedId ?? '-', // <-- simpan default jika null
     };
   }
 }

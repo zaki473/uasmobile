@@ -25,7 +25,7 @@ class _ReportCardState extends State<ReportCard> {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       if (auth.currentUser != null) {
         Provider.of<GradeProvider>(context, listen: false)
-            .fetchGrades(auth.currentUser!.id);
+            .fetchGrades(auth.currentUser!.uid);
       }
     });
   }
