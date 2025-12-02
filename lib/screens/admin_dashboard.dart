@@ -75,16 +75,6 @@ class _AdminDashboardState extends State<AdminDashboard>
     'color': Colors.blue,
     'page': ManageSchedulePage(),
   },
-  {
-    'title': 'Laporan',
-    'subtitle': 'Laporan nilai',
-    'icon': Icons.assessment_outlined,
-    'color': Colors.purple,
-    'page': Scaffold(
-      appBar: AppBar(title: const Text('Laporan Nilai')),
-      body: const Center(child: Text('Halaman Laporan')),
-    ),
-  },
 ];
 
 

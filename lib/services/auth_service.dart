@@ -120,7 +120,7 @@ class AuthService {
       email: email,
       password: password,
       name: name,
-      role: 'teacher',
+      role: 'guru',
     );
     if (err != null) return err;
 

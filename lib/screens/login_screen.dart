@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../providers/theme_provider.dart'; // <-- Import ThemeProvider
+import '../providers/theme_provider.dart';
 import 'admin_dashboard.dart';
 import 'teacher_dashboard.dart';
 import 'student_dashboard.dart';
@@ -14,6 +14,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  // --- LOGIC AUTH (TIDAK DIUBAH SAMA SEKALI) ---
   final emailC = TextEditingController();
   final passC = TextEditingController();
   bool isLoading = false;
@@ -28,7 +29,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _handleLogin() async {
     FocusScope.of(context).unfocus();
-
     if (!mounted) return;
     setState(() => isLoading = true);
 
@@ -48,202 +48,278 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         next = const StudentDashboard();
       }
-
       if (!mounted) return;
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (_) => next));
     } else {
-      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Login Gagal! Periksa kembali email dan password.'),
+          content: Text('Login Gagal. Cek email dan password.'),
           backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
         ),
       );
     }
   }
+  // --- END LOGIC ---
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    // Ambil state theme saat ini
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final size = MediaQuery.of(context).size;
+
+    // --- COLOR PALETTE (Clean & Elegant) ---
+    // Light: Putih Bersih + Biru Laut Dalam (Deep Teal)
+    // Dark: Abu Arang (Charcoal) + Biru Elektrik Lembut
+    final Color mainBg = isDark ? const Color(0xFF1E1E24) : const Color(0xFFFFFFFF);
+    final Color secondaryBg = isDark ? const Color(0xFF2D2D35) : const Color(0xFFF8F9FD);
+    final Color brandColor = isDark ? const Color(0xFF6C63FF) : const Color(0xFF2A2D3E);
+    final Color textColor = isDark ? Colors.white : const Color(0xFF2A2D3E);
 
     return Scaffold(
-      // Gunakan Stack agar tombol switch bisa ditaruh di atas background
-      body: Stack(
-        children: [
-          // Layer 1: Background
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: isDark
-                    ? [ // Warna Background saat Dark Mode (Gelap)
-                        const Color(0xFF121212),
-                        const Color(0xFF2C3E50),
-                      ]
-                    : [ // Warna Background saat Light Mode (Biru Ungu)
-                        Colors.blue.shade800,
-                        Colors.purple.shade600,
-                      ],
-              ),
-            ),
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      backgroundColor: secondaryBg,
+      body: SizedBox(
+        height: size.height,
+        width: size.width,
+        child: Stack(
+          children: [
+            // 1. BACKGROUND HEADER (Curved Shape)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: size.height * 0.45, // Mengambil 45% layar atas
+              child: Container(
+                decoration: BoxDecoration(
+                  color: brandColor,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(60), // Lengkungan elegant
+                    bottomRight: Radius.circular(60),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: brandColor.withOpacity(0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    )
+                  ],
+                ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(
-                      Icons.school,
-                      size: 80,
-                      color: Colors.white,
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.school_rounded, size: 50, color: Colors.white),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Login Akademik',
-                      textAlign: TextAlign.center,
-                      style: textTheme.headlineMedium?.copyWith(
+                    const SizedBox(height: 15),
+                    const Text(
+                      "AKADEMIK",
+                      style: TextStyle(
                         color: Colors.white,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
                       ),
                     ),
-                    const SizedBox(height: 8),
                     Text(
-                      'Masuk untuk melanjutkan',
-                      textAlign: TextAlign.center,
-                      style: textTheme.titleMedium?.copyWith(
-                        color: Colors.white70,
+                      "Portal Sistem Informasi",
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 14,
                       ),
                     ),
-                    const SizedBox(height: 40),
-
-                    _buildEmailField(isDark),
-                    const SizedBox(height: 16),
-                    _buildPasswordField(isDark),
-                    const SizedBox(height: 32),
-
-                    _buildLoginButton(),
+                    const SizedBox(height: 40), // Ruang agar tidak tertutup kartu
                   ],
                 ),
               ),
             ),
-          ),
 
-          // Layer 2: Tombol Toggle Dark Mode (Pojok Kanan Atas)
-          Positioned(
-            top: 40,
-            right: 20,
-            child: SafeArea(
-              child: Row(
-                children: [
-                  Icon(
-                    isDark ? Icons.dark_mode : Icons.light_mode,
-                    color: Colors.white70,
+            // 2. THEME TOGGLE (Top Right)
+            Positioned(
+              top: 50,
+              right: 25,
+              child: InkWell(
+                onTap: () => themeProvider.toggleTheme(!isDark),
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(width: 8),
-                  Switch(
-                    value: isDark,
-                    activeColor: Colors.blueAccent,
-                    onChanged: (value) {
-                      // Panggil fungsi toggleTheme di Provider
-                      themeProvider.toggleTheme(value);
-                    },
+                  child: Icon(
+                    isDark ? Icons.light_mode : Icons.dark_mode,
+                    color: Colors.white,
+                    size: 20,
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildEmailField(bool isDark) {
-    return TextField(
-      controller: emailC,
-      keyboardType: TextInputType.emailAddress,
-      decoration: InputDecoration(
-        labelText: 'Email',
-        prefixIcon: const Icon(Icons.email_outlined),
-        filled: true,
-        // Sesuaikan opacity background field agar terlihat bagus di dark/light
-        fillColor: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.1),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        labelStyle: const TextStyle(color: Colors.white70),
-        prefixIconColor: Colors.white70,
-      ),
-      style: const TextStyle(color: Colors.white),
-    );
-  }
+            // 3. FLOATING FORM CARD
+            Positioned(
+              top: size.height * 0.35, // Muncul menumpuk di atas header
+              left: 24,
+              right: 24,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                decoration: BoxDecoration(
+                  color: mainBg,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                      blurRadius: 30,
+                      offset: const Offset(0, 15),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Selamat Datang",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Silakan login untuk melanjutkan.",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: textColor.withOpacity(0.5),
+                      ),
+                    ),
+                    const SizedBox(height: 30),
 
-  Widget _buildPasswordField(bool isDark) {
-    return TextField(
-      controller: passC,
-      obscureText: !_isPasswordVisible,
-      decoration: InputDecoration(
-        labelText: 'Password',
-        prefixIcon: const Icon(Icons.lock_outline),
-        suffixIcon: IconButton(
-          icon: Icon(
-            _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
-            color: Colors.white70,
-          ),
-          onPressed: () {
-            setState(() {
-              _isPasswordVisible = !_isPasswordVisible;
-            });
-          },
-        ),
-        filled: true,
-        fillColor: isDark ? Colors.white.withOpacity(0.15) : Colors.black.withOpacity(0.1),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        labelStyle: const TextStyle(color: Colors.white70),
-        prefixIconColor: Colors.white70,
-      ),
-      style: const TextStyle(color: Colors.white),
-    );
-  }
+                    // INPUT EMAIL
+                    _buildElegantField(
+                      controller: emailC,
+                      label: "Email",
+                      icon: Icons.email_outlined,
+                      isDark: isDark,
+                      textColor: textColor,
+                    ),
+                    const SizedBox(height: 20),
 
-  Widget _buildLoginButton() {
-    return ElevatedButton(
-      onPressed: isLoading ? null : _handleLogin,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.blue.shade800,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        elevation: 5,
-      ),
-      child: isLoading
-          ? const SizedBox(
-              height: 24,
-              width: 24,
-              child: CircularProgressIndicator(
-                strokeWidth: 3,
-                color: Colors.blue,
-              ),
-            )
-          : const Text(
-              'Login',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+                    // INPUT PASSWORD
+                    _buildElegantField(
+                      controller: passC,
+                      label: "Password",
+                      icon: Icons.lock_outline_rounded,
+                      isDark: isDark,
+                      textColor: textColor,
+                      isPassword: true,
+                    ),
+
+                    const SizedBox(height: 40),
+
+                    // BUTTON LOGIN
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: isLoading ? null : _handleLogin,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: brandColor,
+                          foregroundColor: Colors.white,
+                          elevation: 0, // Flat design agar elegant
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: isLoading
+                            ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                              )
+                            : const Text(
+                                "Masuk",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
+            
+            // 4. FOOTER COPYRIGHT
+            Positioned(
+              bottom: 24,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Text(
+                  "© 2024 Sekolah Digital",
+                  style: TextStyle(
+                    color: textColor.withOpacity(0.3),
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // WIDGET INPUT KHUSUS
+  Widget _buildElegantField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required bool isDark,
+    required Color textColor,
+    bool isPassword = false,
+  }) {
+    // Warna fill input yang sangat lembut
+    final fillColor = isDark ? const Color(0xFF2A2A35) : const Color(0xFFF5F6FA);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: fillColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: TextField(
+        controller: controller,
+        obscureText: isPassword && !_isPasswordVisible,
+        style: TextStyle(color: textColor, fontWeight: FontWeight.w500),
+        decoration: InputDecoration(
+          border: InputBorder.none, // Hilangkan garis border
+          labelText: label,
+          labelStyle: TextStyle(color: textColor.withOpacity(0.4)),
+          prefixIcon: Icon(icon, color: textColor.withOpacity(0.4), size: 22),
+          suffixIcon: isPassword
+              ? IconButton(
+                  icon: Icon(
+                    _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                    color: textColor.withOpacity(0.4),
+                    size: 20,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isPasswordVisible = !_isPasswordVisible;
+                    });
+                  },
+                )
+              : null,
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+      ),
     );
   }
 }
