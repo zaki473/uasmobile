@@ -1,59 +1,55 @@
-import 'package:flutter/foundation.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import '../models/teacher.dart';
+import '../services/teacher_service.dart';
+import '../services/auth_service.dart';
 
 class TeacherProvider extends ChangeNotifier {
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final TeacherService service = TeacherService();
 
-  List<Teacher> _teachers = [];
-  List<Teacher> get teachers => _teachers;
+  List<Teacher> teachers = [];
 
-  // --- FETCH DATA ---
-  Future<void> fetchTeachers() async {
-    try {
-      final snapshot = await _db.collection('teachers').get();
-      _teachers = snapshot.docs.map((d) {
-        final data = d.data();
-        return Teacher(
-          id: d.id,
-          name: data['name'] ?? 'Tanpa Nama',
-          subject: data['subject'] ?? '-',
-        );
-      }).toList();
+  void fetchTeachers() {
+    service.getTeachers().listen((data) {
+      teachers = data;
       notifyListeners();
-    } catch (e) {
-      debugPrint('Fetch teachers error: $e');
-    }
+    });
   }
 
-  // --- ADD TEACHER ---
   Future<void> addTeacher(Teacher t) async {
-    try {
-      await _db.collection('teachers').add(t.toMap());
-      await fetchTeachers();
-    } catch (e) {
-      debugPrint('Add teacher error: $e');
-    }
+    await service.addTeacher(t);
   }
 
-  // --- UPDATE TEACHER ---
+  /// Tambah guru sekaligus membuat akun (email/password) seperti flow siswa.
+  /// Mengembalikan `null` jika sukses, atau pesan error jika gagal.
+  Future<String?> addTeacherWithAuth({
+    required String email,
+    required String password,
+    required String name,
+    required String subject,
+    required String phone,
+  }) async {
+    final auth = AuthService();
+    final err = await auth.registerTeacher(
+      email: email,
+      password: password,
+      name: name,
+      subject: subject,
+      phone: phone,
+    );
+
+    if (err == null) {
+      // refresh list
+      fetchTeachers();
+    }
+
+    return err;
+  }
+
   Future<void> updateTeacher(Teacher t) async {
-    try {
-      await _db.collection('teachers').doc(t.id).update(t.toMap());
-      await fetchTeachers();
-    } catch (e) {
-      debugPrint('Update teacher error: $e');
-    }
+    await service.updateTeacher(t);
   }
 
-  // --- DELETE TEACHER ---
   Future<void> deleteTeacher(String id) async {
-    try {
-      await _db.collection('teachers').doc(id).delete();
-      _teachers.removeWhere((t) => t.id == id);
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Delete teacher error: $e');
-    }
+    await service.deleteTeacher(id);
   }
 }

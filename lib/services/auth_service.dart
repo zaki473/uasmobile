@@ -1,61 +1,39 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart'; 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
+import '../models/teacher.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// Login user.
-  /// FITUR PINTAR: Jika data di database tidak ditemukan, 
-  /// sistem akan otomatis membuatnya agar user tetap bisa masuk.
+  // LOGIN (cek di collection users)
   Future<UserModel?> login(String email, String password) async {
     try {
-      print("🔹 Mencoba login dengan email: $email");
-
-      // 1️⃣ Login ke Firebase Authentication
       UserCredential result = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
       User? user = result.user;
-      
-      if (user == null) {
-        print("❌ User tidak ditemukan dari FirebaseAuth");
-        return null;
-      }
+      if (user == null) return null;
 
-      print("✅ Login FirebaseAuth berhasil (UID: ${user.uid})");
-
-      // 2️⃣ Cek data user dari Firestore
-      DocumentReference docRef = _firestore.collection('users').doc(user.uid);
-      DocumentSnapshot userDoc = await docRef.get();
-
-      // 3️⃣ LOGIKA AUTO-GENERATE (Solusi Error Data Hilang)
-      if (!userDoc.exists) {
-        print("⚠️ Data Firestore KOSONG! Membuat data default otomatis...");
-        
-        // Ambil nama dari email (misal: admin@sekolah.com -> admin)
+      final doc = await _firestore.collection('users').doc(user.uid).get();
+      if (!doc.exists) {
+        // Jika belum ada, buat default user student
         String defaultName = email.split('@')[0];
-        
-        // Default data
         Map<String, dynamic> newData = {
           'uid': user.uid,
           'name': defaultName,
           'email': email,
-          'role': 'student', // Default role aman (nanti bisa diubah admin)
+          'role': 'student',
           'linkedId': '-',
           'createdAt': FieldValue.serverTimestamp(),
         };
-
-        // Simpan ke database
-        await docRef.set(newData);
-        print("✅ Data default berhasil dibuat!");
-
-        // Return user model baru
+        await _firestore.collection('users').doc(user.uid).set(newData);
         return UserModel(
-          id: user.uid,
+          uid: user.uid,
           name: defaultName,
           email: email,
           role: 'student',
@@ -63,63 +41,52 @@ class AuthService {
         );
       }
 
-      // 4️⃣ Jika data sudah ada, ambil seperti biasa
-      print("✅ Data user ditemukan di Firestore");
-      final data = userDoc.data() as Map<String, dynamic>;
-      
+      final data = doc.data() as Map<String, dynamic>;
       return UserModel(
-        id: userDoc.id,
+        uid: data['uid'] ?? user.uid,
         name: data['name'] ?? '',
         email: data['email'] ?? '',
         role: data['role'] ?? 'student',
         linkedId: data['linkedId'],
       );
-
     } catch (e) {
-      print("❌ Error login: $e");
+      print("Error login: $e");
       return null;
     }
   }
 
-  /// Logout user
+  // LOGOUT
   Future<void> logout() async {
     await _auth.signOut();
   }
 
-  /// 🆕 REGISTER USER (Untuk Admin)
-  /// Membuat User Auth + Database User sekaligus tanpa logout Admin.
+  // REGISTER USER (Admin menambah akun biasa atau guru)
   Future<String?> registerUser({
     required String email,
     required String password,
     required String name,
-    required String role, // 'admin' atau 'student'
-    String? linkedId,     // Opsional: NISN atau Kode Guru
+    required String role,
+    String? linkedId,
   }) async {
     FirebaseApp? secondaryApp;
-    
-    try {
-      print("🔹 Admin mencoba mendaftarkan user baru: $email ($role)");
 
-      // 1. Inisialisasi App Sekunder (Agar Admin tidak logout)
+    try {
+      // app kedua supaya admin tetap login
       secondaryApp = await Firebase.initializeApp(
         name: 'SecondaryRegisterApp',
         options: Firebase.app().options,
       );
+      final auth2 = FirebaseAuth.instanceFor(app: secondaryApp);
 
-      final authInstance = FirebaseAuth.instanceFor(app: secondaryApp);
-
-      // 2. Buat Akun di Authentication
-      UserCredential uc = await authInstance.createUserWithEmailAndPassword(
+      UserCredential uc = await auth2.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
+      String uid = uc.user!.uid;
 
-      String newUid = uc.user!.uid;
-      print("✅ Akun Auth berhasil dibuat. UID: $newUid");
-
-      // 3. Simpan Data ke Firestore (ID Dokumen = UID Auth)
-      await _firestore.collection('users').doc(newUid).set({
-        'uid': newUid,
+      // simpan data ke collection users
+      await _firestore.collection('users').doc(uid).set({
+        'uid': uid,
         'name': name,
         'email': email,
         'role': role,
@@ -127,17 +94,59 @@ class AuthService {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      print("✅ Data Firestore berhasil disimpan untuk $name");
-      return null; // Return null artinya SUKSES
-
+      return null;
     } catch (e) {
-      print("❌ Gagal register: $e");
-      return e.toString(); // Return pesan error
+      return e.toString();
     } finally {
-      // Hapus app sekunder untuk hemat memori
-      if (secondaryApp != null) {
-        await secondaryApp.delete();
+      try {
+        if (secondaryApp != null) await secondaryApp.delete();
+      } catch (deleteError) {
+        // Abaikan error saat hapus secondary app (bisa terjadi di web)
+        debugPrint('Error deleting secondary app: $deleteError');
       }
+    }
+  }
+
+  // REGISTER TEACHER (buat akun guru + entry di users dan teachers)
+  Future<String?> registerTeacher({
+    required String email,
+    required String password,
+    required String name,
+    required String subject,
+    required String phone,
+  }) async {
+    // Buat entry di users dulu
+    String? err = await registerUser(
+      email: email,
+      password: password,
+      name: name,
+      role: 'guru',
+    );
+    if (err != null) return err;
+
+    try {
+      // Ambil UID user yang baru dibuat
+      QuerySnapshot q = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .get();
+      if (q.docs.isEmpty) return "UID guru tidak ditemukan.";
+
+      String uid = q.docs.first['uid'];
+
+      // Simpan detail ke collection teachers
+      Teacher teacher = Teacher(
+        id: uid,
+        name: name,
+        subject: subject,
+        email: email,
+        phone: phone,
+      );
+      await _firestore.collection('teachers').doc(uid).set(teacher.toMap());
+
+      return null;
+    } catch (e) {
+      return e.toString();
     }
   }
 }

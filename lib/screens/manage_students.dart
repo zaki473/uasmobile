@@ -179,7 +179,6 @@ class _ManageStudentsState extends State<ManageStudents> {
 
     // Warna untuk modal sheet
     final sheetBgColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-    final textColor = isDark ? Colors.white : Colors.black87;
 
     final nisC = TextEditingController(text: student?.nis);
     final nameC = TextEditingController(text: student?.name);

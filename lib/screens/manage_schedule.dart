@@ -41,17 +41,26 @@ class _ManageSchedulePageState extends State<ManageSchedulePage> {
   }
 
   // Ambil data guru
+  // KODE BARU (AMAN)
   Future<void> loadGuru() async {
+    // Pastikan query role-nya sesuai dengan yang ada di database ('guru' atau 'teacher')
     final snapshot = await FirebaseFirestore.instance
         .collection('users')
-        .where('role', isEqualTo: 'guru')
+        .where('role', isEqualTo: 'guru') 
         .get();
 
     if (mounted) {
       setState(() {
-        guruList = snapshot.docs
-            .map((d) => {'id': d.id, 'nama': d['nama']})
-            .toList();
+        guruList = snapshot.docs.map((d) {
+          // Ambil data sebagai Map agar tidak error jika key tidak ditemukan
+          final data = d.data();
+          
+          return {
+            'id': d.id,
+            // Cek 'nama', jika tidak ada cek 'name', jika tidak ada pakai string kosong
+            'nama': data['nama'] ?? data['name'] ?? 'Tanpa Nama', 
+          };
+        }).toList();
       });
     }
   }
