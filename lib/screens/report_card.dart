@@ -18,6 +18,12 @@ class ReportCard extends StatefulWidget {
 }
 
 class _ReportCardState extends State<ReportCard> {
+  // --- STYLE CONSTANTS ---
+  final Color rgPrimary = const Color(0xFF3ecfde);
+  final Color bgGrey = const Color(0xFFF4F7F9);
+  final Color textDark = const Color(0xFF2D3E50);
+  final Color textGrey = const Color(0xFF9B9B9B);
+
   @override
   void initState() {
     super.initState();
@@ -31,13 +37,13 @@ class _ReportCardState extends State<ReportCard> {
   }
 
   Color _getGradeColor(double score) {
-    if (score >= 85) return Colors.green.shade600;
-    if (score >= 70) return Colors.orange.shade600;
-    return Colors.red.shade600;
+    if (score >= 85) return Colors.green;
+    if (score >= 70) return Colors.orange;
+    return Colors.red;
   }
 
   // ----------------------------------------------------------
-  // FUNGSI GENERATE PDF (TETAP STANDAR PUTIH UNTUK PRINTING)
+  // FUNGSI GENERATE PDF (LOGIC TIDAK DIUBAH)
   // ----------------------------------------------------------
   Future<void> _generatePdf(List<Grade> grades, double average, String studentName) async {
     final doc = pw.Document();
@@ -107,56 +113,54 @@ class _ReportCardState extends State<ReportCard> {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final studentName = auth.currentUser?.name ?? "Siswa";
 
-    // 1. Deteksi Tema
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    // 2. Warna UI
-    final scaffoldBg = isDark ? null : Colors.grey[100];
-    final loadingTextColor = isDark ? Colors.white70 : Colors.black54;
-
     return Scaffold(
-      backgroundColor: scaffoldBg,
+      backgroundColor: bgGrey, // Background Abu Muda
+      
+      // --- APP BAR CLEAN ---
       appBar: AppBar(
-        title: const Text('Rapor Belajar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blue.shade700, Colors.teal.shade400],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+        backgroundColor: Colors.white,
+        centerTitle: true,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: textDark, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Laporan Hasil Belajar',
+          style: TextStyle(
+            color: textDark, 
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
           ),
         ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(color: Colors.grey.shade200, height: 1.0),
+        ),
       ),
+
       body: Consumer<GradeProvider>(
         builder: (context, gradeProv, child) {
           if (gradeProv.isLoading) {
+            return Center(child: CircularProgressIndicator(color: rgPrimary));
+          }
+
+          if (gradeProv.grades.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
-                  Text('Memuat data rapor...', style: TextStyle(color: loadingTextColor)),
+                  Icon(Icons.assignment_late_outlined, size: 60, color: Colors.grey[300]),
+                  const SizedBox(height: 10),
+                  Text('Data nilai belum tersedia.', style: TextStyle(color: textGrey)),
                 ],
               ),
             );
           }
 
-          if (gradeProv.grades.isEmpty) {
-            return Center(
-              child: Text(
-                'Data nilai belum tersedia.', 
-                style: TextStyle(color: loadingTextColor)
-              )
-            );
-          }
-
           return Column(
             children: [
+              // --- LIST NILAI ---
               Expanded(
                 child: ListView.builder(
                   padding: const EdgeInsets.all(16),
@@ -165,11 +169,13 @@ class _ReportCardState extends State<ReportCard> {
                     final grade = gradeProv.grades[index];
                     return _AnimatedListItem(
                       index: index,
-                      child: _buildGradeCard(grade), // Pass grade only
+                      child: _buildGradeCard(grade),
                     );
                   },
                 ),
               ),
+
+              // --- SUMMARY CARD (Sticky Bottom) ---
               _buildSummaryCard(gradeProv, studentName),
             ],
           );
@@ -178,150 +184,160 @@ class _ReportCardState extends State<ReportCard> {
     );
   }
 
+  // --- WIDGET KARTU NILAI (MODERN STYLE) ---
   Widget _buildGradeCard(Grade grade) {
     final gradeColor = _getGradeColor(grade.finalScore);
-    
-    // Variabel tema untuk Card
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? Theme.of(context).cardColor : Colors.white;
-    final titleColor = isDark ? Colors.white : Colors.black87;
-    final subtitleColor = isDark ? Colors.white70 : Colors.grey[600];
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      // Shadow transparan di dark mode
-      shadowColor: isDark ? Colors.transparent : Colors.black26,
-      color: cardBg,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        // Tambah border tipis di dark mode
-        side: isDark ? const BorderSide(color: Colors.white10) : BorderSide.none
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    grade.subject,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: titleColor, // <-- Dinamis
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Tugas: ${grade.tugas} • UTS: ${grade.uts} • UAS: ${grade.uas}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: subtitleColor, // <-- Dinamis
-                        ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: gradeColor, width: 2.5),
-                  ),
-                  child: Text(
-                    grade.finalScore.toStringAsFixed(1),
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: gradeColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  grade.predicate,
-                  style: TextStyle(
-                    color: gradeColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            )
-          ],
-        ),
-      ),
-    );
-  }
-  
-  // ----------------------------------------------------------
-  // WIDGET SUMMARY
-  // ----------------------------------------------------------
-  Widget _buildSummaryCard(GradeProvider gradeProv, String studentName) {
-    final average = gradeProv.getAverage();
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? Theme.of(context).cardColor : Colors.white;
-    final labelColor = isDark ? Colors.white70 : Colors.grey[600];
-    final valueColor = isDark ? Colors.blue.shade300 : Colors.blue.shade700;
-    
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.transparent : Colors.grey.withOpacity(0.2),
-            spreadRadius: 2,
-            blurRadius: 5,
-            offset: const Offset(0, 3),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
-        // Border tipis di dark mode
-        border: isDark ? Border.all(color: Colors.white10) : null,
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Bagian Kiri: Nilai Rata-rata
-            Column(
+      child: Row(
+        children: [
+          // 1. Detail Mata Pelajaran
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Rata-rata Nilai',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(color: labelColor),
+                  grade.subject,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: textDark,
+                  ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
+                // Chip detail nilai kecil
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    _miniScore("Tugas", grade.tugas),
+                    _miniScore("UTS", grade.uts),
+                    _miniScore("UAS", grade.uas),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: 12),
+
+          // 2. Nilai Akhir (Lingkaran)
+          Column(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: gradeColor, width: 3),
+                  color: Colors.white,
+                ),
+                child: Center(
+                  child: Text(
+                    grade.finalScore.toStringAsFixed(0),
+                    style: TextStyle(
+                      color: gradeColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                grade.predicate,
+                style: TextStyle(
+                  color: gradeColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  // Helper kecil untuk menampilkan skor tugas/uts/uas
+  Widget _miniScore(String label, double score) {
+    return Text(
+      "$label: ${score.toInt()}",
+      style: TextStyle(fontSize: 11, color: textGrey),
+    );
+  }
+  
+  // --- WIDGET RINGKASAN (BOTTOM BAR) ---
+  Widget _buildSummaryCard(GradeProvider gradeProv, String studentName) {
+    final average = gradeProv.getAverage();
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, -5), // Shadow ke atas
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Info Rata-rata
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Rata-rata Nilai',
+                  style: TextStyle(color: textGrey, fontSize: 12),
+                ),
+                const SizedBox(height: 2),
                 Text(
                   average.toStringAsFixed(2),
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: valueColor,
-                      ),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: rgPrimary, // Cyan Number
+                  ),
                 ),
               ],
             ),
             
-            // Bagian Kanan: Tombol Export PDF
+            // Tombol PDF
             ElevatedButton.icon(
               onPressed: () => _generatePdf(gradeProv.grades, average, studentName),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade500,
+                backgroundColor: Colors.redAccent, // Merah agar beda (Action Button)
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                elevation: 3,
+                elevation: 0,
               ),
-              icon: const Icon(Icons.picture_as_pdf_rounded),
-              label: const Text("Export PDF"),
+              icon: const Icon(Icons.print_rounded, size: 20),
+              label: const Text("Cetak PDF", style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -330,7 +346,7 @@ class _ReportCardState extends State<ReportCard> {
   }
 }
 
-// Widget Animasi List (Tetap)
+// --- ANIMASI ITEM (TIDAK DIUBAH) ---
 class _AnimatedListItem extends StatefulWidget {
   final int index;
   final Widget child;
